@@ -34,7 +34,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 
 ## API Endpoints
 
-Base URL: `https://your-site.com/wp-json/neoservice/v1`
+Base URL: `https://your-site.com/wp-json/elementor-mcp-api/v1`
 
 ### Pages
 
@@ -89,7 +89,7 @@ Base URL: `https://your-site.com/wp-json/neoservice/v1`
 ## Quick Start
 
 ```bash
-API="https://your-site.com/wp-json/neoservice/v1"
+API="https://your-site.com/wp-json/elementor-mcp-api/v1"
 AUTH="username:your-application-password"
 
 # List pages

@@ -1,5 +1,5 @@
 <?php
-namespace NeoService\ElementorAPI;
+namespace ElementorMcpApi;
 
 /**
  * REST API Controller - exposes all Elementor operations as REST endpoints.
@@ -7,7 +7,7 @@ namespace NeoService\ElementorAPI;
  */
 class REST_Controller {
 
-    const NAMESPACE = 'neoservice/v1';
+    const NAMESPACE = 'elementor-mcp-api/v1';
 
     public function register_routes(): void {
         $editor  = ['permission_callback' => [$this, 'check_edit_permission']];

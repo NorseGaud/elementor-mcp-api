@@ -1,5 +1,5 @@
 <?php
-namespace NeoService\ElementorAPI;
+namespace ElementorMcpApi;
 
 /**
  * Centralized capability checks for REST + MCP abilities.

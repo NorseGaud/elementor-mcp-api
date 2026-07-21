@@ -1,7 +1,7 @@
 ---
 name: elementor-builder
 description: |
-  Universal AI-driven Elementor page building via NeoService REST API.
+  Universal AI-driven Elementor page building via Elementor MCP API.
   Use when the user:
   - Wants to create, edit, or modify Elementor pages on any WordPress site
   - Wants to update page sections, widgets, or styles
@@ -11,15 +11,15 @@ description: |
   - Wants to create headers, footers, or templates
 ---
 
-# Elementor Builder - NeoService API Skill
+# Elementor Builder - Elementor MCP API Skill
 
-Universal skill for AI-driven Elementor page editing on any WordPress site running the NeoService Elementor API plugin.
+Universal skill for AI-driven Elementor page editing on any WordPress site running the Elementor MCP API plugin.
 
 ## Setup
 
 Before using the API, determine the site's connection info. Check project docs (`AGENTS.md`, `CLAUDE.md`, README) or agent memory for credentials. Set variables:
 ```bash
-API="https://{site}/wp-json/neoservice/v1"
+API="https://{site}/wp-json/elementor-mcp-api/v1"
 AUTH="{user}:{application_password}"
 ```
 

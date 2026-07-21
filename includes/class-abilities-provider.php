@@ -1,8 +1,8 @@
 <?php
-namespace NeoService\ElementorAPI;
+namespace ElementorMcpApi;
 
 /**
- * Registers NeoService abilities for the WordPress Abilities API + MCP Adapter.
+ * Registers Elementor MCP API abilities for the WordPress Abilities API + MCP Adapter.
  * Each ability is exposed as an MCP tool via the default MCP server.
  */
 class Abilities_Provider {
@@ -63,14 +63,14 @@ class Abilities_Provider {
      * Register the ability category and all abilities.
      */
     public static function register_category(): void {
-        wp_register_ability_category('neoservice-elementor', [
-            'label'       => 'NeoService Elementor',
+        wp_register_ability_category('elementor-mcp-api', [
+            'label'       => 'Elementor MCP API',
             'description' => 'AI-driven Elementor page building tools for creating, reading, and modifying Elementor pages, elements, templates, and global settings.',
         ]);
     }
 
     /**
-     * Register all NeoService abilities.
+     * Register all Elementor MCP API abilities.
      */
     public static function register(): void {
         self::register_page_abilities();
@@ -85,10 +85,10 @@ class Abilities_Provider {
 
     private static function register_page_abilities(): void {
 
-        wp_register_ability('neoservice/list-pages', [
+        wp_register_ability('elementor-mcp-api/list-pages', [
             'label'       => 'List Pages',
             'description' => 'List all WordPress pages with their Elementor status. Returns page ID, title, slug, status, URL, and whether the page uses Elementor.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'output_schema' => [
                 'type'  => 'array',
                 'items' => [
@@ -125,10 +125,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('neoservice/get-page-structure', [
+        wp_register_ability('elementor-mcp-api/get-page-structure', [
             'label'       => 'Get Page Structure',
             'description' => 'Get a compact summary of an Elementor page structure showing element IDs, types, widget types, and key settings hints. Use this to understand the page layout before making changes.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id'],
@@ -168,10 +168,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('neoservice/get-page-data', [
+        wp_register_ability('elementor-mcp-api/get-page-data', [
             'label'       => 'Get Page Data',
             'description' => 'Get the full Elementor element tree (JSON) for a page. Returns the complete data structure including all settings. Use get-page-structure for a lighter overview.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id'],
@@ -211,10 +211,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('neoservice/save-page-data', [
+        wp_register_ability('elementor-mcp-api/save-page-data', [
             'label'       => 'Save Page Data',
             'description' => 'Save the full Elementor element tree for a page. Replaces all existing page content. Use update-element for granular changes.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'data'],
@@ -250,10 +250,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('neoservice/create-page', [
+        wp_register_ability('elementor-mcp-api/create-page', [
             'label'       => 'Create Page',
             'description' => 'Create a new WordPress page with optional Elementor content. Returns the new page ID and URL.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['title'],
@@ -313,10 +313,10 @@ class Abilities_Provider {
 
     private static function register_element_abilities(): void {
 
-        wp_register_ability('neoservice/get-element', [
+        wp_register_ability('elementor-mcp-api/get-element', [
             'label'       => 'Get Element',
             'description' => 'Get the full data (settings, children) of a single Elementor element by ID. Avoids fetching the entire page when you only need one element.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -353,10 +353,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('neoservice/move-element', [
+        wp_register_ability('elementor-mcp-api/move-element', [
             'label'       => 'Move Element',
             'description' => 'Move an Elementor element to a new position within the page. Can move to root level or inside a specific parent container. The element is removed from its current location and inserted at the new position.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -421,10 +421,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('neoservice/update-element', [
+        wp_register_ability('elementor-mcp-api/update-element', [
             'label'       => 'Update Element Settings',
             'description' => 'Update the settings of a specific Elementor element by its ID. Merges new settings with existing ones. Use get-page-structure first to find element IDs.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id', 'settings'],
@@ -469,10 +469,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('neoservice/add-element', [
+        wp_register_ability('elementor-mcp-api/add-element', [
             'label'       => 'Add Element',
             'description' => 'Add a new Elementor element (container or widget) to a page. Can be added to the root level or inside a specific parent container. Use Element Factory format for the element structure.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element'],
@@ -532,10 +532,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('neoservice/remove-element', [
+        wp_register_ability('elementor-mcp-api/remove-element', [
             'label'       => 'Remove Element',
             'description' => 'Remove an Elementor element by its ID from a page. Also removes all children.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -575,10 +575,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(true),
         ]);
 
-        wp_register_ability('neoservice/duplicate-element', [
+        wp_register_ability('elementor-mcp-api/duplicate-element', [
             'label'       => 'Duplicate Element',
             'description' => 'Duplicate an Elementor element by its ID. The clone is inserted right after the original with new IDs.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -619,10 +619,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('neoservice/generate-element', [
+        wp_register_ability('elementor-mcp-api/generate-element', [
             'label'       => 'Generate Element',
             'description' => 'Generate a well-formed Elementor element using the Element Factory. Supports containers, rows, columns, and all common widgets (heading, text, image, button, form, etc.) and composite patterns (hero, content-row). Returns the element JSON ready to be used with add-element or save-page-data.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['type'],
@@ -723,10 +723,10 @@ class Abilities_Provider {
 
     private static function register_template_abilities(): void {
 
-        wp_register_ability('neoservice/list-templates', [
+        wp_register_ability('elementor-mcp-api/list-templates', [
             'label'       => 'List Templates',
             'description' => 'List all Elementor Theme Builder templates (headers, footers, single, archive, etc.) with their display conditions.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'output_schema' => [
                 'type'  => 'array',
                 'items' => [
@@ -760,10 +760,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('neoservice/create-template', [
+        wp_register_ability('elementor-mcp-api/create-template', [
             'label'       => 'Create Template',
             'description' => 'Create an Elementor Theme Builder template (header, footer, single, archive, etc.) with display conditions. Conditions format: ["include/general"] for entire site.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['title', 'type', 'data'],
@@ -815,10 +815,10 @@ class Abilities_Provider {
 
     private static function register_kit_abilities(): void {
 
-        wp_register_ability('neoservice/get-kit', [
+        wp_register_ability('elementor-mcp-api/get-kit', [
             'label'       => 'Get Global Kit Settings',
             'description' => 'Get the Elementor global kit settings including site colors, typography, button styles, and layout defaults.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'output_schema' => [
                 'type' => 'object',
             ],
@@ -829,10 +829,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('neoservice/update-kit', [
+        wp_register_ability('elementor-mcp-api/update-kit', [
             'label'       => 'Update Global Kit Settings',
             'description' => 'Update Elementor global kit settings (colors, typography, buttons, etc.). Merges with existing settings. Automatically flushes all CSS cache.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['settings'],
@@ -864,10 +864,10 @@ class Abilities_Provider {
 
     private static function register_widget_abilities(): void {
 
-        wp_register_ability('neoservice/list-widgets', [
+        wp_register_ability('elementor-mcp-api/list-widgets', [
             'label'       => 'List Widgets',
             'description' => 'List all available Elementor widgets with their names, titles, icons, and categories.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'output_schema' => [
                 'type'  => 'array',
                 'items' => [
@@ -887,10 +887,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('neoservice/get-widget-schema', [
+        wp_register_ability('elementor-mcp-api/get-widget-schema', [
             'label'       => 'Get Widget Schema',
             'description' => 'Get the full control schema for a specific Elementor widget, showing all available settings with their types, labels, defaults, and options. Essential for knowing what settings to pass when creating or updating widgets.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['widget_name'],
@@ -919,10 +919,10 @@ class Abilities_Provider {
 
     private static function register_utility_abilities(): void {
 
-        wp_register_ability('neoservice/flush-css', [
+        wp_register_ability('elementor-mcp-api/flush-css', [
             'label'       => 'Flush CSS Cache',
             'description' => 'Flush the Elementor CSS cache. Optionally for a specific post, or all posts if no post_id is given.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'properties' => [
@@ -952,10 +952,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('neoservice/build-page', [
+        wp_register_ability('elementor-mcp-api/build-page', [
             'label'       => 'Build Complete Page',
             'description' => 'Create or update a complete Elementor page in a single call. Optionally creates the page, imports images, and saves the full Elementor element tree. This is the most powerful ability for building pages from scratch.',
-            'category'    => 'neoservice-elementor',
+            'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['data'],

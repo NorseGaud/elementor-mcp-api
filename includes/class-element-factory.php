@@ -1,5 +1,5 @@
 <?php
-namespace NeoService\ElementorAPI;
+namespace ElementorMcpApi;
 
 /**
  * Element Factory - creates properly structured Elementor JSON elements.

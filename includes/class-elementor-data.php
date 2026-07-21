@@ -1,5 +1,5 @@
 <?php
-namespace NeoService\ElementorAPI;
+namespace ElementorMcpApi;
 
 /**
  * Elementor Data Manager - handles reading/writing Elementor page data.
