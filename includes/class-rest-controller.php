@@ -39,6 +39,12 @@ class REST_Controller {
             ...$editor,
         ]);
 
+        register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/meta', [
+            'methods'  => 'PATCH',
+            'callback' => [$this, 'update_page_meta'],
+            ...$editor,
+        ]);
+
         register_rest_route(self::NAMESPACE, '/page', [
             'methods'  => 'POST',
             'callback' => [$this, 'create_page'],
@@ -306,6 +312,25 @@ class REST_Controller {
             'id'       => $id,
             'sections' => count($body['data']),
         ], $success ? 200 : 500);
+    }
+
+    public function update_page_meta(\WP_REST_Request $request): \WP_REST_Response {
+        $id   = (int) $request['id'];
+        $body = $request->get_json_params() ?: [];
+
+        if ($denied = $this->require_edit_page($id)) {
+            return $denied;
+        }
+
+        $result = Elementor_Data::update_page_meta($id, $body);
+        if (is_wp_error($result)) {
+            return new \WP_REST_Response([
+                'error' => $result->get_error_message(),
+                'code'  => $result->get_error_code(),
+            ], 400);
+        }
+
+        return new \WP_REST_Response($result, 200);
     }
 
     public function create_page(\WP_REST_Request $request): \WP_REST_Response {

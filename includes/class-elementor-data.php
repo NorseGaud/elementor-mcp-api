@@ -64,6 +64,84 @@ class Elementor_Data {
     }
 
     /**
+     * Update WordPress page fields and common SEO meta (Yoast).
+     *
+     * @param array $fields Supported keys: title, slug, excerpt, status,
+     *                      seo_title, meta_description, og_title, og_description,
+     *                      twitter_title, twitter_description.
+     * @return array|WP_Error Updated field snapshot on success.
+     */
+    public static function update_page_meta(int $post_id, array $fields) {
+        $post = get_post($post_id);
+        if (!$post) {
+            return new \WP_Error('not_found', 'Page not found.');
+        }
+
+        $update = ['ID' => $post_id];
+
+        if (array_key_exists('title', $fields) && $fields['title'] !== null && $fields['title'] !== '') {
+            $update['post_title'] = sanitize_text_field($fields['title']);
+        }
+        if (array_key_exists('slug', $fields) && $fields['slug'] !== null && $fields['slug'] !== '') {
+            $update['post_name'] = sanitize_title($fields['slug']);
+        }
+        if (array_key_exists('excerpt', $fields) && $fields['excerpt'] !== null) {
+            $update['post_excerpt'] = sanitize_textarea_field($fields['excerpt']);
+        }
+        if (array_key_exists('status', $fields) && $fields['status'] !== null && $fields['status'] !== '') {
+            $status = Permissions::authorize_page_status($fields['status']);
+            if (is_wp_error($status)) {
+                return $status;
+            }
+            $update['post_status'] = $status;
+        }
+
+        if (count($update) > 1) {
+            $result = wp_update_post($update, true);
+            if (is_wp_error($result)) {
+                return $result;
+            }
+        }
+
+        $yoast_map = [
+            'seo_title'            => '_yoast_wpseo_title',
+            'meta_description'     => '_yoast_wpseo_metadesc',
+            'og_title'             => '_yoast_wpseo_opengraph-title',
+            'og_description'       => '_yoast_wpseo_opengraph-description',
+            'twitter_title'        => '_yoast_wpseo_twitter-title',
+            'twitter_description'  => '_yoast_wpseo_twitter-description',
+        ];
+
+        foreach ($yoast_map as $field => $meta_key) {
+            if (!array_key_exists($field, $fields) || $fields[$field] === null) {
+                continue;
+            }
+            $value = sanitize_text_field((string) $fields[$field]);
+            if ($value === '') {
+                delete_post_meta($post_id, $meta_key);
+            } else {
+                update_post_meta($post_id, $meta_key, $value);
+            }
+        }
+
+        $fresh = get_post($post_id);
+        return [
+            'post_id'             => $post_id,
+            'title'               => $fresh->post_title,
+            'slug'                => $fresh->post_name,
+            'status'              => $fresh->post_status,
+            'excerpt'             => $fresh->post_excerpt,
+            'seo_title'           => (string) get_post_meta($post_id, '_yoast_wpseo_title', true),
+            'meta_description'    => (string) get_post_meta($post_id, '_yoast_wpseo_metadesc', true),
+            'og_title'            => (string) get_post_meta($post_id, '_yoast_wpseo_opengraph-title', true),
+            'og_description'      => (string) get_post_meta($post_id, '_yoast_wpseo_opengraph-description', true),
+            'twitter_title'       => (string) get_post_meta($post_id, '_yoast_wpseo_twitter-title', true),
+            'twitter_description' => (string) get_post_meta($post_id, '_yoast_wpseo_twitter-description', true),
+            'url'                 => get_permalink($post_id),
+        ];
+    }
+
+    /**
      * Get a compact page structure (IDs, types, widget types).
      */
     public static function get_page_structure(int $post_id): ?array {

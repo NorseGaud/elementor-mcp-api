@@ -81,6 +81,7 @@ class Abilities_Provider {
             'elementor-mcp-api/get-page-data',
             'elementor-mcp-api/save-page-data',
             'elementor-mcp-api/create-page',
+            'elementor-mcp-api/update-page-meta',
             'elementor-mcp-api/get-element',
             'elementor-mcp-api/move-element',
             'elementor-mcp-api/update-element',
@@ -134,7 +135,10 @@ class Abilities_Provider {
                 ],
             ],
             'execute_callback' => function () {
-                $pages  = get_pages(['sort_column' => 'post_title']);
+                $pages  = get_pages([
+                    'sort_column' => 'post_title',
+                    'post_status' => ['publish', 'draft', 'pending', 'private', 'future'],
+                ]);
                 $result = [];
                 foreach ($pages as $page) {
                     if (!Permissions::can_edit_page($page->ID)) {
@@ -153,6 +157,77 @@ class Abilities_Provider {
             },
             'permission_callback' => [self::class, 'can_read'],
             'meta' => self::meta_read(),
+        ]);
+
+        wp_register_ability('elementor-mcp-api/update-page-meta', [
+            'label'       => 'Update Page Meta',
+            'description' => 'Update WordPress page title, slug, excerpt, status, and Yoast SEO metadata (seo_title, meta_description, Open Graph, Twitter). Does not modify Elementor layout data.',
+            'category'    => 'elementor-mcp-api',
+            'input_schema' => [
+                'type'       => 'object',
+                'required'   => ['post_id'],
+                'properties' => [
+                    'post_id' => [
+                        'type'        => 'integer',
+                        'description' => 'The WordPress page/post ID.',
+                    ],
+                    'title' => [
+                        'type'        => 'string',
+                        'description' => 'WordPress page title.',
+                    ],
+                    'slug' => [
+                        'type'        => 'string',
+                        'description' => 'Page slug (URL-friendly name).',
+                    ],
+                    'excerpt' => [
+                        'type'        => 'string',
+                        'description' => 'Page excerpt.',
+                    ],
+                    'status' => [
+                        'type'        => 'string',
+                        'description' => 'Page status. publish/private/future require publish_pages.',
+                        'enum'        => ['draft', 'pending', 'publish', 'private', 'future'],
+                    ],
+                    'seo_title' => [
+                        'type'        => 'string',
+                        'description' => 'Yoast SEO title.',
+                    ],
+                    'meta_description' => [
+                        'type'        => 'string',
+                        'description' => 'Yoast meta description.',
+                    ],
+                    'og_title' => [
+                        'type'        => 'string',
+                        'description' => 'Yoast Open Graph title.',
+                    ],
+                    'og_description' => [
+                        'type'        => 'string',
+                        'description' => 'Yoast Open Graph description.',
+                    ],
+                    'twitter_title' => [
+                        'type'        => 'string',
+                        'description' => 'Yoast Twitter title.',
+                    ],
+                    'twitter_description' => [
+                        'type'        => 'string',
+                        'description' => 'Yoast Twitter description.',
+                    ],
+                ],
+                'additionalProperties' => false,
+            ],
+            'output_schema' => [
+                'type' => 'object',
+            ],
+            'execute_callback' => function ($input) {
+                $post_id = (int) $input['post_id'];
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) {
+                    return $allowed;
+                }
+                return Elementor_Data::update_page_meta($post_id, $input);
+            },
+            'permission_callback' => [self::class, 'can_edit'],
+            'meta' => self::meta_write(),
         ]);
 
         wp_register_ability('elementor-mcp-api/get-page-structure', [

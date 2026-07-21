@@ -11,7 +11,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 - **Element operations** — add, remove, duplicate, move elements in the page tree
 - **Global kit management** — read/write colors, fonts, and site-wide settings
 - **Widget discovery** — list all available widgets and get their control schemas
-- **MCP protocol support** — auto-registers 20 abilities via the core [Abilities API](https://developer.wordpress.org/apis/abilities-api/) when [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active
+- **MCP protocol support** — auto-registers 21 abilities via the core [Abilities API](https://developer.wordpress.org/apis/abilities-api/) when [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active
 - **CSS cache management** — flush Elementor CSS after changes
 
 ## Requirements
@@ -54,59 +54,63 @@ python3 upload-sftp.py
 
 The script locates `wp-content/plugins`, uploads into `elementor-mcp-api/`, and overwrites matching remote files on re-run. It skips `.git`, `.gitignore`, and the upload script itself. Remote files that no longer exist locally are not deleted.
 
-## API Endpoints
+## API & MCP Tools
 
-Base URL: `https://your-site.com/wp-json/elementor-mcp-api/v1`
+REST base: `https://your-site.com/wp-json/elementor-mcp-api/v1`  
+MCP tools use the names below exactly as shown in the client (ability `elementor-mcp-api/foo` → tool `elementor-mcp-api-foo`). See [MCP Integration](#mcp-integration).
 
 ### Pages
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/pages` | List all Elementor pages |
-| GET | `/page/{id}` | Full page data (elements tree) |
-| GET | `/page/{id}/structure` | Lightweight structure (IDs, types, hints) |
-| PUT | `/page/{id}` | Replace all page data |
-| POST | `/page` | Create a new page |
-| POST | `/build-page` | Create or update a full page |
+| Method | Endpoint | MCP Tool | Description |
+|--------|----------|----------|-------------|
+| GET | `/pages` | `elementor-mcp-api-list-pages` | List WordPress pages with Elementor status |
+| GET | `/page/{id}/structure` | `elementor-mcp-api-get-page-structure` | Compact page tree (IDs, types, hints) |
+| GET | `/page/{id}` | `elementor-mcp-api-get-page-data` | Full Elementor element tree |
+| PUT | `/page/{id}` | `elementor-mcp-api-save-page-data` | Replace the full element tree |
+| PATCH | `/page/{id}/meta` | `elementor-mcp-api-update-page-meta` | Update title, slug, excerpt, status, Yoast SEO |
+| POST | `/page` | `elementor-mcp-api-create-page` | Create a page with optional Elementor content |
+| POST | `/build-page` | `elementor-mcp-api-build-page` | Create or update a full page (optional image import) |
 
 ### Elements
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/page/{id}/element/{eid}` | Get single element data |
-| PATCH | `/page/{id}/element/{eid}` | Update element settings (merge) |
-| POST | `/page/{id}/element` | Add new element |
-| DELETE | `/page/{id}/element/{eid}` | Remove element |
-| POST | `/page/{id}/element/{eid}/duplicate` | Duplicate element |
-| POST | `/page/{id}/element/{eid}/move` | Move element to new position |
+| Method | Endpoint | MCP Tool | Description |
+|--------|----------|----------|-------------|
+| GET | `/page/{id}/element/{eid}` | `elementor-mcp-api-get-element` | Get one element’s full data |
+| PATCH | `/page/{id}/element/{eid}` | `elementor-mcp-api-update-element` | Merge settings into an element |
+| POST | `/page/{id}/element` | `elementor-mcp-api-add-element` | Add a container or widget |
+| DELETE | `/page/{id}/element/{eid}` | `elementor-mcp-api-remove-element` | Remove an element (and children) |
+| POST | `/page/{id}/element/{eid}/duplicate` | `elementor-mcp-api-duplicate-element` | Clone an element with new IDs |
+| POST | `/page/{id}/element/{eid}/move` | `elementor-mcp-api-move-element` | Move an element to a new parent/position |
+| — | — | `elementor-mcp-api-generate-element` | Build well-formed element JSON via the Element Factory (MCP only) |
 
 ### Templates
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/templates` | List all templates |
-| POST | `/template` | Create template (header, footer, etc.) |
+| Method | Endpoint | MCP Tool | Description |
+|--------|----------|----------|-------------|
+| GET | `/templates` | `elementor-mcp-api-list-templates` | List Theme Builder templates and conditions |
+| POST | `/template` | `elementor-mcp-api-create-template` | Create a header/footer/single/archive/etc. template |
 
 ### Global Settings
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/kit` | Get global kit settings |
-| PUT | `/kit` | Update global kit settings |
+| Method | Endpoint | MCP Tool | Description |
+|--------|----------|----------|-------------|
+| GET | `/kit` | `elementor-mcp-api-get-kit` | Read global kit settings |
+| PUT | `/kit` | `elementor-mcp-api-update-kit` | Merge global kit settings (flushes CSS) |
 
 ### Widgets
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/widgets` | List all registered widgets |
-| GET | `/widget/{name}/schema` | Get widget control schema |
-| GET | `/widget/{name}/defaults` | Ready-to-use element JSON with defaults |
+| Method | Endpoint | MCP Tool | Description |
+|--------|----------|----------|-------------|
+| GET | `/widgets` | `elementor-mcp-api-list-widgets` | List registered Elementor widgets |
+| GET | `/widget/{name}/schema` | `elementor-mcp-api-get-widget-schema` | Control schema for a widget type |
+| GET | `/widget/{name}/defaults` | — | Ready-to-use element JSON with defaults (REST only) |
 
-### Cache
+### Cache & media
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/flush-css` | Flush Elementor CSS cache |
+| Method | Endpoint | MCP Tool | Description |
+|--------|----------|----------|-------------|
+| POST | `/flush-css` | `elementor-mcp-api-flush-css` | Flush Elementor CSS cache |
+| POST | `/media/import` | — | Import an image from the upload jail (REST only; also via `elementor-mcp-api-build-page`) |
 
 ## Quick Start
 
@@ -136,7 +140,7 @@ This plugin can expose its capabilities via the Model Context Protocol for direc
 1. Use **WordPress 6.9+** — the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) ships in core ([standalone plugin archived](https://github.com/WordPress/abilities-api/issues/160); no separate Abilities install needed)
 2. Install and activate the official [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin  
    Download the latest `mcp-adapter.zip` from [Releases](https://github.com/WordPress/mcp-adapter/releases) → Plugins → Add New → Upload Plugin → Activate
-3. Activate this plugin — it auto-registers 20 abilities and a dedicated MCP server (no extra WordPress config)
+3. Activate this plugin — it auto-registers 21 abilities and a dedicated MCP server (no extra WordPress config)
 4. Create an Application Password for a user with the capabilities you need (admin recommended)
 5. Verify the MCP route exists (must not 404):
 
@@ -149,7 +153,7 @@ This plugin can expose its capabilities via the Model Context Protocol for direc
 
 MCP endpoint: `https://your-site.com/wp-json/elementor-mcp-api/mcp`
 
-This plugin registers its own MCP Adapter server on that path (hook: `mcp_adapter_init`). The adapter’s generic default server (`/wp-json/mcp/mcp-adapter-default-server`) is a useful smoke test that MCP Adapter itself is active, but is not required for these Elementor tools.
+This plugin registers its own MCP Adapter server on that path (hook: `mcp_adapter_init`). The adapter’s generic default server (`/wp-json/mcp/mcp-adapter-default-server`) is a useful smoke test that MCP Adapter itself is active, but is not required for these Elementor tools. The full REST ↔ MCP mapping is in [API & MCP Tools](#api--mcp-tools).
 
 ### Configure `mcp.json`
 
