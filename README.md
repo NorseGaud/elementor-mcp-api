@@ -28,7 +28,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 1. Download or clone this repository into `wp-content/plugins/`:
    ```bash
    cd wp-content/plugins/
-   git clone https://github.com/bvisible/elementor-mcp-api.git
+   git clone https://github.com/NorseGaud/elementor-mcp-api.git
    ```
 2. Activate the plugin in WordPress admin
 3. Create an Application Password in **Users → Your Profile → Application Passwords**
