@@ -67,8 +67,8 @@ class Elementor_Data {
      * Update WordPress page fields and common SEO meta (Yoast).
      *
      * @param array $fields Supported keys: title, slug, excerpt, status,
-     *                      seo_title, meta_description, og_title, og_description,
-     *                      twitter_title, twitter_description.
+     *                      focus_keyphrase, seo_title, meta_description,
+     *                      og_title, og_description, twitter_title, twitter_description.
      * @return array|WP_Error Updated field snapshot on success.
      */
     public static function update_page_meta(int $post_id, array $fields) {
@@ -104,6 +104,7 @@ class Elementor_Data {
         }
 
         $yoast_map = [
+            'focus_keyphrase'      => '_yoast_wpseo_focuskw',
             'seo_title'            => '_yoast_wpseo_title',
             'meta_description'     => '_yoast_wpseo_metadesc',
             'og_title'             => '_yoast_wpseo_opengraph-title',
@@ -131,6 +132,7 @@ class Elementor_Data {
             'slug'                => $fresh->post_name,
             'status'              => $fresh->post_status,
             'excerpt'             => $fresh->post_excerpt,
+            'focus_keyphrase'     => (string) get_post_meta($post_id, '_yoast_wpseo_focuskw', true),
             'seo_title'           => (string) get_post_meta($post_id, '_yoast_wpseo_title', true),
             'meta_description'    => (string) get_post_meta($post_id, '_yoast_wpseo_metadesc', true),
             'og_title'            => (string) get_post_meta($post_id, '_yoast_wpseo_opengraph-title', true),

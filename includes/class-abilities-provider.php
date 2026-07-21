@@ -161,7 +161,7 @@ class Abilities_Provider {
 
         wp_register_ability('elementor-mcp-api/update-page-meta', [
             'label'       => 'Update Page Meta',
-            'description' => 'Update WordPress page title, slug, excerpt, status, and Yoast SEO metadata (seo_title, meta_description, Open Graph, Twitter). Does not modify Elementor layout data.',
+            'description' => 'Update WordPress page title, slug, excerpt, status, and Yoast SEO metadata (focus_keyphrase, seo_title, meta_description, Open Graph, Twitter). Does not modify Elementor layout data.',
             'category'    => 'elementor-mcp-api',
             'input_schema' => [
                 'type'       => 'object',
@@ -187,6 +187,10 @@ class Abilities_Provider {
                         'type'        => 'string',
                         'description' => 'Page status. publish/private/future require publish_pages.',
                         'enum'        => ['draft', 'pending', 'publish', 'private', 'future'],
+                    ],
+                    'focus_keyphrase' => [
+                        'type'        => 'string',
+                        'description' => 'Yoast focus keyphrase (_yoast_wpseo_focuskw).',
                     ],
                     'seo_title' => [
                         'type'        => 'string',
