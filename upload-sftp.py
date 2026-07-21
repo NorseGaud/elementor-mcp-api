@@ -29,13 +29,18 @@ except ImportError:
 
 LOCAL_ROOT = os.path.dirname(os.path.abspath(__file__))
 PLUGIN_SLUG = "elementor-mcp-api"
+# Dev/docs/tooling only — not required for the plugin to run in WordPress.
 SKIP_NAMES = {
     ".git",
     ".gitignore",
     ".DS_Store",
     ".cursor",
-    "upload-sftp.py",
     "__pycache__",
+    "upload-sftp.py",
+    "README.md",
+    "AGENTS.md",
+    "LICENSE",
+    "agent-skill",
 }
 
 

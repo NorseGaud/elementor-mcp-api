@@ -11,7 +11,7 @@
 
 if (!defined('ABSPATH')) exit;
 
-define('ELEMENTOR_MCP_API_VERSION', '2.0.0');
+define('ELEMENTOR_MCP_API_VERSION', '2.0.1');
 define('ELEMENTOR_MCP_API_PATH', plugin_dir_path(__FILE__));
 
 // Load core includes
