@@ -11,14 +11,15 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 - **Element operations** — add, remove, duplicate, move elements in the page tree
 - **Global kit management** — read/write colors, fonts, and site-wide settings
 - **Widget discovery** — list all available widgets and get their control schemas
-- **MCP protocol support** — auto-registers 20 abilities when used with [WordPress Abilities API](https://github.com/bvisible/wordpress-abilities-api) + [WordPress MCP Adapter](https://github.com/bvisible/wordpress-mcp-adapter)
+- **MCP protocol support** — auto-registers 20 abilities via the core [Abilities API](https://developer.wordpress.org/apis/abilities-api/) when [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active
 - **CSS cache management** — flush Elementor CSS after changes
 
 ## Requirements
 
-- WordPress 6.0+
+- WordPress 6.0+ for the REST API; **WordPress 6.9+** for MCP (the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) is in core — the standalone [abilities-api](https://github.com/WordPress/abilities-api) plugin repo is archived)
 - PHP 7.4+
 - Elementor (free or Pro)
+- For MCP (Cursor / Claude / etc.): [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (required — without it `/wp-json/elementor-mcp-api/mcp` will 404)
 - Authentication: WordPress Application Passwords (recommended) or cookie auth
 - Authorization: page read/write requires `edit_pages` (+ per-page `edit_post`); publish requires `publish_pages`; kit/templates/CSS flush require `manage_options`
 
@@ -132,15 +133,23 @@ curl -s -X POST -u "$AUTH" "$API/flush-css"
 
 This plugin can expose its capabilities via the Model Context Protocol for direct AI agent integration:
 
-1. Install [WordPress Abilities API](https://github.com/bvisible/wordpress-abilities-api)
-2. Install [WordPress MCP Adapter](https://github.com/bvisible/wordpress-mcp-adapter)
-3. Activate this plugin — it auto-registers 20 abilities (no extra WordPress config)
+1. Use **WordPress 6.9+** — the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) ships in core ([standalone plugin archived](https://github.com/WordPress/abilities-api/issues/160); no separate Abilities install needed)
+2. Install and activate the official [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin  
+   Download the latest `mcp-adapter.zip` from [Releases](https://github.com/WordPress/mcp-adapter/releases) → Plugins → Add New → Upload Plugin → Activate
+3. Activate this plugin — it auto-registers 20 abilities and a dedicated MCP server (no extra WordPress config)
 4. Create an Application Password for a user with the capabilities you need (admin recommended)
-5. Add the server to your client `mcp.json` (see below)
+5. Verify the MCP route exists (must not 404):
+
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}\n" https://your-site.com/wp-json/elementor-mcp-api/mcp
+   ```
+
+   A working install returns something other than `404`. If you still get `404`, MCP Adapter is missing/inactive — the REST API under `/wp-json/elementor-mcp-api/v1` can work while MCP tools do not.
+6. Add the server to your client `mcp.json` (see below), then reload MCP servers in the client
 
 MCP endpoint: `https://your-site.com/wp-json/elementor-mcp-api/mcp`
 
-This plugin registers its own MCP Adapter server (same namespace as the REST API). The adapter’s generic default server (`/wp-json/mcp/mcp-adapter-default-server`) is not required for these tools.
+This plugin registers its own MCP Adapter server on that path (hook: `mcp_adapter_init`). The adapter’s generic default server (`/wp-json/mcp/mcp-adapter-default-server`) is a useful smoke test that MCP Adapter itself is active, but is not required for these Elementor tools.
 
 ### Configure `mcp.json`
 
@@ -159,7 +168,8 @@ Uses [`@automattic/mcp-wordpress-remote`](https://www.npmjs.com/package/@automat
       "env": {
         "WP_API_URL": "https://your-site.com/wp-json/elementor-mcp-api/mcp",
         "WP_API_USERNAME": "your-wp-username",
-        "WP_API_PASSWORD": "xxxx xxxx xxxx xxxx xxxx xxxx"
+        "WP_API_PASSWORD": "xxxx xxxx xxxx xxxx xxxx xxxx",
+        "OAUTH_ENABLED": "false"
       }
     }
   }
@@ -168,9 +178,12 @@ Uses [`@automattic/mcp-wordpress-remote`](https://www.npmjs.com/package/@automat
 
 Replace:
 
-- `WP_API_URL` — your site’s Elementor MCP endpoint (`/wp-json/elementor-mcp-api/mcp`)
+- `WP_API_URL` — your site’s Elementor MCP endpoint (`/wp-json/elementor-mcp-api/mcp`) — must be the real hostname, not the `your-site.com` placeholder
 - `WP_API_USERNAME` — WordPress username
 - `WP_API_PASSWORD` — Application Password (spaces are fine)
+- `OAUTH_ENABLED` — set to `"false"` when using Application Passwords (required by `@automattic/mcp-wordpress-remote`)
+
+If Cursor shows a green status but **“No tools, prompts, or resources”**, the proxy likely cached a failed init (common right after installing MCP Adapter). Toggle the server off/on or reload MCP servers so it reconnects against the live `/mcp` route.
 
 #### Local site (STDIO + WP-CLI)
 
