@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Elementor MCP API
  * Description: REST API + MCP tools for AI-driven Elementor page building. Exposes endpoints to create, read, update pages, elements, templates, and global settings programmatically. Compatible with WordPress MCP Adapter.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Jérémy Christillin (bvisible) & Nathan Pierce (NorseGaud)
  * Requires at least: 6.0
  * Requires PHP: 7.4
