@@ -32,6 +32,27 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 2. Activate the plugin in WordPress admin
 3. Create an Application Password in **Users → Your Profile → Application Passwords**
 
+### Deploy over SFTP
+
+Use `upload-sftp.py` from the repo root to push the plugin into a remote WordPress `wp-content/plugins/` directory. Requires [paramiko](https://www.paramiko.org/) (`pip install paramiko`).
+
+Credentials are read from environment variables (nothing is stored in the script):
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SFTP_HOST` | yes | SFTP hostname |
+| `SFTP_USER` | yes | SFTP username |
+| `SFTP_PASS` | yes | SFTP password |
+| `SFTP_PORT` | no | Port (default `22`) |
+
+```bash
+SFTP_HOST=sftp.example.com SFTP_PORT=32022 \
+SFTP_USER=myuser SFTP_PASS='secret' \
+python3 upload-sftp.py
+```
+
+The script locates `wp-content/plugins`, uploads into `elementor-mcp-api/`, and overwrites matching remote files on re-run. It skips `.git`, `.gitignore`, and the upload script itself. Remote files that no longer exist locally are not deleted.
+
 ## API Endpoints
 
 Base URL: `https://your-site.com/wp-json/elementor-mcp-api/v1`
@@ -113,9 +134,74 @@ This plugin can expose its capabilities via the Model Context Protocol for direc
 
 1. Install [WordPress Abilities API](https://github.com/bvisible/wordpress-abilities-api)
 2. Install [WordPress MCP Adapter](https://github.com/bvisible/wordpress-mcp-adapter)
-3. The plugin auto-registers 20 abilities — no configuration needed
+3. Activate this plugin — it auto-registers 20 abilities (no extra WordPress config)
+4. Create an Application Password for a user with the capabilities you need (admin recommended)
+5. Add the server to your client `mcp.json` (see below)
 
-MCP endpoint: `https://your-site.com/wp-json/mcp/mcp-adapter-default-server`
+MCP endpoint: `https://your-site.com/wp-json/elementor-mcp-api/mcp`
+
+This plugin registers its own MCP Adapter server (same namespace as the REST API). The adapter’s generic default server (`/wp-json/mcp/mcp-adapter-default-server`) is not required for these tools.
+
+### Configure `mcp.json`
+
+MCP clients (Cursor, Claude Desktop, VS Code, etc.) read a JSON config that registers servers. Use the HTTP bridge for remote sites, or STDIO + WP-CLI for a local WordPress install.
+
+#### Remote site (HTTP) — recommended for hosted WordPress
+
+Uses [`@automattic/mcp-wordpress-remote`](https://www.npmjs.com/package/@automattic/mcp-wordpress-remote) to proxy MCP over the WordPress REST API:
+
+```json
+{
+  "mcpServers": {
+    "elementor-mcp-api": {
+      "command": "npx",
+      "args": ["-y", "@automattic/mcp-wordpress-remote@latest"],
+      "env": {
+        "WP_API_URL": "https://your-site.com/wp-json/elementor-mcp-api/mcp",
+        "WP_API_USERNAME": "your-wp-username",
+        "WP_API_PASSWORD": "xxxx xxxx xxxx xxxx xxxx xxxx"
+      }
+    }
+  }
+}
+```
+
+Replace:
+
+- `WP_API_URL` — your site’s Elementor MCP endpoint (`/wp-json/elementor-mcp-api/mcp`)
+- `WP_API_USERNAME` — WordPress username
+- `WP_API_PASSWORD` — Application Password (spaces are fine)
+
+#### Local site (STDIO + WP-CLI)
+
+When WordPress and WP-CLI are available on the same machine:
+
+```json
+{
+  "mcpServers": {
+    "elementor-mcp-api": {
+      "command": "wp",
+      "args": [
+        "--path=/path/to/your/wordpress/site",
+        "mcp-adapter",
+        "serve",
+        "--server=elementor-mcp-api",
+        "--user=admin"
+      ]
+    }
+  }
+}
+```
+
+#### Where to put the file
+
+| Client | Config location |
+|--------|-----------------|
+| Cursor | `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project) |
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) |
+| VS Code | `.vscode/mcp.json` (often uses a top-level `"servers"` key instead of `"mcpServers"`) |
+
+After saving, restart the client (or reload MCP servers) so the new tools appear. Abilities from this plugin register with `public: false`, so authentication is required — use a dedicated Application Password, not your main login password.
 
 ## Agent Skill
 
@@ -148,7 +234,7 @@ Or copy `agent-skill/SKILL.md` into your agent's skills directory manually. Rest
 - **PATCH merges settings**: Only send the settings you want to change, not the full settings object.
 - **Default page status**: `POST /page` and `POST /build-page` default to `draft`. Publishing requires `publish_pages`.
 - **Media import jail**: `POST /media/import` only accepts real image files under `wp-content/uploads/elementor-mcp-import/`.
-- **MCP tools**: Registered with `public: false` — use an authenticated MCP adapter session (dedicated admin Application Password recommended).
+- **MCP tools**: Exposed on `/wp-json/elementor-mcp-api/mcp` (authenticated Application Password session; dedicated admin password recommended).
 
 ## License
 

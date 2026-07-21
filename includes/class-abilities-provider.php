@@ -70,6 +70,36 @@ class Abilities_Provider {
     }
 
     /**
+     * Ability names exposed as tools on this plugin's dedicated MCP server.
+     *
+     * @return list<string>
+     */
+    public static function get_tool_ability_names(): array {
+        return [
+            'elementor-mcp-api/list-pages',
+            'elementor-mcp-api/get-page-structure',
+            'elementor-mcp-api/get-page-data',
+            'elementor-mcp-api/save-page-data',
+            'elementor-mcp-api/create-page',
+            'elementor-mcp-api/get-element',
+            'elementor-mcp-api/move-element',
+            'elementor-mcp-api/update-element',
+            'elementor-mcp-api/add-element',
+            'elementor-mcp-api/remove-element',
+            'elementor-mcp-api/duplicate-element',
+            'elementor-mcp-api/generate-element',
+            'elementor-mcp-api/list-templates',
+            'elementor-mcp-api/create-template',
+            'elementor-mcp-api/get-kit',
+            'elementor-mcp-api/update-kit',
+            'elementor-mcp-api/list-widgets',
+            'elementor-mcp-api/get-widget-schema',
+            'elementor-mcp-api/flush-css',
+            'elementor-mcp-api/build-page',
+        ];
+    }
+
+    /**
      * Register all Elementor MCP API abilities.
      */
     public static function register(): void {

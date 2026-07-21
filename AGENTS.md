@@ -1,1 +1,2 @@
 - Never include any mention of cursor in the commit message.
+- IF there are major changes to files/structure, make sure the upload-sftp.py script is updated to support them.

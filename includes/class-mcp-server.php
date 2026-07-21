@@ -1,0 +1,62 @@
+<?php
+namespace ElementorMcpApi;
+
+/**
+ * Registers a dedicated MCP Adapter server for this plugin.
+ *
+ * Endpoint: /wp-json/elementor-mcp-api/mcp
+ * Server ID (STDIO): elementor-mcp-api
+ */
+class Mcp_Server {
+
+    const SERVER_ID = 'elementor-mcp-api';
+    const ROUTE_NAMESPACE = 'elementor-mcp-api';
+    const ROUTE = 'mcp';
+
+    /**
+     * Hook: mcp_adapter_init
+     *
+     * @param object $adapter \WP\MCP\Core\McpAdapter instance.
+     */
+    public static function register($adapter): void {
+        if (!did_action('elementor/loaded')) {
+            return;
+        }
+
+        if (!class_exists(\WP\MCP\Transport\HttpTransport::class)) {
+            return;
+        }
+
+        if (!class_exists(Abilities_Provider::class)) {
+            require_once ELEMENTOR_MCP_API_PATH . 'includes/class-abilities-provider.php';
+        }
+
+        $error_handler = class_exists(\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler::class)
+            ? \WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler::class
+            : null;
+
+        $observability = class_exists(\WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler::class)
+            ? \WP\MCP\Infrastructure\Observability\NullMcpObservabilityHandler::class
+            : null;
+
+        $result = $adapter->create_server(
+            self::SERVER_ID,
+            self::ROUTE_NAMESPACE,
+            self::ROUTE,
+            'Elementor MCP API',
+            'AI-driven Elementor page building tools.',
+            'v' . ELEMENTOR_MCP_API_VERSION,
+            [\WP\MCP\Transport\HttpTransport::class],
+            $error_handler,
+            $observability,
+            Abilities_Provider::get_tool_ability_names(),
+            [],
+            []
+        );
+
+        if (is_wp_error($result) && defined('WP_DEBUG') && WP_DEBUG) {
+            // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+            error_log('Elementor MCP API: failed to create MCP server — ' . $result->get_error_message());
+        }
+    }
+}
