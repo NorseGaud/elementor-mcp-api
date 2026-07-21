@@ -9,10 +9,11 @@ class Abilities_Provider {
 
     /**
      * MCP meta for read-only abilities.
+     * public=false: tools require authenticated MCP adapter sessions.
      */
     private static function meta_read(): array {
         return [
-            'mcp' => ['public' => true, 'type' => 'tool'],
+            'mcp' => ['public' => false, 'type' => 'tool'],
             'annotations' => [
                 'readonly'    => true,
                 'destructive' => false,
@@ -26,7 +27,7 @@ class Abilities_Provider {
      */
     private static function meta_write(bool $destructive = false): array {
         return [
-            'mcp' => ['public' => true, 'type' => 'tool'],
+            'mcp' => ['public' => false, 'type' => 'tool'],
             'annotations' => [
                 'readonly'    => false,
                 'destructive' => $destructive,
@@ -35,18 +36,27 @@ class Abilities_Provider {
         ];
     }
 
-    /**
-     * Permission: can read posts.
-     */
+    /** Permission: Editor+ (edit_pages). */
     public static function can_read(): bool {
-        return current_user_can('read');
+        return Permissions::can_read();
     }
 
-    /**
-     * Permission: can edit posts.
-     */
+    /** Permission: Editor+ (edit_pages). */
     public static function can_edit(): bool {
-        return current_user_can('edit_posts');
+        return Permissions::can_edit();
+    }
+
+    /** Permission: Admin (manage_options) for kit/templates/flush. */
+    public static function can_manage(): bool {
+        return Permissions::can_manage();
+    }
+
+    /** @return true|\WP_Error */
+    private static function require_edit_page(int $post_id) {
+        if (!Permissions::can_edit_page($post_id)) {
+            return new \WP_Error('forbidden', 'Forbidden for this page.', ['status' => 403]);
+        }
+        return true;
     }
 
     /**
@@ -97,6 +107,9 @@ class Abilities_Provider {
                 $pages  = get_pages(['sort_column' => 'post_title']);
                 $result = [];
                 foreach ($pages as $page) {
+                    if (!Permissions::can_edit_page($page->ID)) {
+                        continue;
+                    }
                     $result[] = [
                         'id'            => $page->ID,
                         'title'         => $page->post_title,
@@ -136,7 +149,11 @@ class Abilities_Provider {
                 ],
             ],
             'execute_callback' => function ($input) {
-                $post_id   = (int) $input['post_id'];
+                $post_id = (int) $input['post_id'];
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) {
+                    return $allowed;
+                }
                 $structure = Elementor_Data::get_page_structure($post_id);
                 if (!$structure) {
                     return new \WP_Error('not_found', 'Page not found or has no Elementor data.');
@@ -176,7 +193,11 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
-                $data    = Elementor_Data::get_page_data($post_id);
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) {
+                    return $allowed;
+                }
+                $data = Elementor_Data::get_page_data($post_id);
                 if (!$data) {
                     return new \WP_Error('not_found', 'Page not found or has no Elementor data.');
                 }
@@ -218,6 +239,10 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) {
+                    return $allowed;
+                }
                 $success = Elementor_Data::save_page_data($post_id, $input['data']);
                 return ['success' => $success, 'post_id' => $post_id];
             },
@@ -243,9 +268,9 @@ class Abilities_Provider {
                     ],
                     'status' => [
                         'type'        => 'string',
-                        'description' => 'The page status.',
-                        'enum'        => ['publish', 'draft', 'pending'],
-                        'default'     => 'publish',
+                        'description' => 'The page status. Defaults to draft. publish/private/future require publish_pages.',
+                        'enum'        => ['draft', 'pending', 'publish', 'private', 'future'],
+                        'default'     => 'draft',
                     ],
                     'data' => [
                         'type'        => 'array',
@@ -259,20 +284,25 @@ class Abilities_Provider {
                 'properties' => [
                     'post_id' => ['type' => 'integer'],
                     'url'     => ['type' => 'string'],
+                    'status'  => ['type' => 'string'],
                 ],
             ],
             'execute_callback' => function ($input) {
+                $status = Permissions::authorize_page_status($input['status'] ?? 'draft');
+                if (is_wp_error($status)) {
+                    return $status;
+                }
                 $post_id = wp_insert_post([
                     'post_title'  => sanitize_text_field($input['title']),
                     'post_name'   => sanitize_title($input['slug'] ?? $input['title']),
                     'post_type'   => 'page',
-                    'post_status' => $input['status'] ?? 'publish',
+                    'post_status' => $status,
                 ]);
                 if (is_wp_error($post_id)) return $post_id;
                 if (!empty($input['data'])) {
                     Elementor_Data::save_page_data($post_id, $input['data']);
                 }
-                return ['post_id' => $post_id, 'url' => get_permalink($post_id)];
+                return ['post_id' => $post_id, 'url' => get_permalink($post_id), 'status' => $status];
             },
             'permission_callback' => [self::class, 'can_edit'],
             'meta' => self::meta_write(),
@@ -308,7 +338,10 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
-                $data    = Elementor_Data::get_page_data($post_id);
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) return $allowed;
+
+                $data = Elementor_Data::get_page_data($post_id);
                 if (!$data) return new \WP_Error('not_found', 'Page not found.');
 
                 $found = Elementor_Data::find_element($data, $input['element_id']);
@@ -357,7 +390,10 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
-                $data    = Elementor_Data::get_page_data($post_id);
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) return $allowed;
+
+                $data = Elementor_Data::get_page_data($post_id);
                 if (!$data) return new \WP_Error('not_found', 'Page not found.');
 
                 $found = Elementor_Data::find_element($data, $input['element_id']);
@@ -417,7 +453,10 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
-                $data    = Elementor_Data::get_page_data($post_id);
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) return $allowed;
+
+                $data = Elementor_Data::get_page_data($post_id);
                 if (!$data) return new \WP_Error('not_found', 'Page not found.');
 
                 $ok = Elementor_Data::update_element_settings($data, $input['element_id'], $input['settings']);
@@ -467,7 +506,10 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
-                $data    = Elementor_Data::get_page_data($post_id);
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) return $allowed;
+
+                $data = Elementor_Data::get_page_data($post_id);
                 if (!$data) {
                     $data = [];
                 }
@@ -517,7 +559,10 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
-                $data    = Elementor_Data::get_page_data($post_id);
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) return $allowed;
+
+                $data = Elementor_Data::get_page_data($post_id);
                 if (!$data) return new \WP_Error('not_found', 'Page not found.');
 
                 $ok = Elementor_Data::remove_element($data, $input['element_id']);
@@ -558,7 +603,10 @@ class Abilities_Provider {
             ],
             'execute_callback' => function ($input) {
                 $post_id = (int) $input['post_id'];
-                $data    = Elementor_Data::get_page_data($post_id);
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) return $allowed;
+
+                $data = Elementor_Data::get_page_data($post_id);
                 if (!$data) return new \WP_Error('not_found', 'Page not found.');
 
                 $new_id = Elementor_Data::duplicate_element($data, $input['element_id']);
@@ -708,7 +756,7 @@ class Abilities_Provider {
                 }
                 return $result;
             },
-            'permission_callback' => [self::class, 'can_read'],
+            'permission_callback' => [self::class, 'can_manage'],
             'meta' => self::meta_read(),
         ]);
 
@@ -758,7 +806,7 @@ class Abilities_Provider {
                 if (!$post_id) return new \WP_Error('failed', 'Failed to create template.');
                 return ['post_id' => $post_id];
             },
-            'permission_callback' => [self::class, 'can_edit'],
+            'permission_callback' => [self::class, 'can_manage'],
             'meta' => self::meta_write(),
         ]);
     }
@@ -777,7 +825,7 @@ class Abilities_Provider {
             'execute_callback' => function () {
                 return Elementor_Data::get_kit_settings();
             },
-            'permission_callback' => [self::class, 'can_read'],
+            'permission_callback' => [self::class, 'can_manage'],
             'meta' => self::meta_read(),
         ]);
 
@@ -807,7 +855,7 @@ class Abilities_Provider {
                 if (!$ok) return new \WP_Error('failed', 'Kit not found or update failed.');
                 return ['success' => true];
             },
-            'permission_callback' => [self::class, 'can_edit'],
+            'permission_callback' => [self::class, 'can_manage'],
             'meta' => self::meta_write(),
         ]);
     }
@@ -900,7 +948,7 @@ class Abilities_Provider {
                 }
                 return ['success' => true];
             },
-            'permission_callback' => [self::class, 'can_edit'],
+            'permission_callback' => [self::class, 'can_manage'],
             'meta' => self::meta_write(),
         ]);
 
@@ -928,9 +976,15 @@ class Abilities_Provider {
                         'type'        => 'array',
                         'description' => 'The full Elementor element tree.',
                     ],
+                    'status' => [
+                        'type'        => 'string',
+                        'description' => 'Page status when creating. Defaults to draft. publish requires publish_pages.',
+                        'enum'        => ['draft', 'pending', 'publish', 'private', 'future'],
+                        'default'     => 'draft',
+                    ],
                     'images' => [
                         'type'        => 'array',
-                        'description' => 'Optional array of {source_path, title} objects to import into the media library before building.',
+                        'description' => 'Optional array of {source_path, title}. source_path must be under wp-content/uploads/elementor-mcp-import/ and be a real image.',
                         'items'       => [
                             'type'       => 'object',
                             'properties' => [
@@ -947,30 +1001,39 @@ class Abilities_Provider {
                 'properties' => [
                     'post_id'    => ['type' => 'integer'],
                     'url'        => ['type' => 'string'],
+                    'status'     => ['type' => 'string'],
                     'image_ids'  => ['type' => 'object'],
                 ],
             ],
             'execute_callback' => function ($input) {
-                // Import images first
+                // Import images first (jailed staging dir + image MIME only)
                 $image_ids = [];
                 if (!empty($input['images'])) {
                     foreach ($input['images'] as $img) {
-                        $id = Elementor_Data::import_image($img['source_path'], $img['title'] ?? '');
-                        if ($id) $image_ids[$img['title'] ?? basename($img['source_path'])] = $id;
+                        $path = $img['source_path'] ?? ($img['path'] ?? '');
+                        $id = Elementor_Data::import_image($path, $img['title'] ?? '');
+                        if ($id) $image_ids[$img['title'] ?? basename($path)] = $id;
                     }
                 }
 
                 // Create or get page
-                $post_id = $input['post_id'] ?? 0;
-                if (!$post_id) {
+                $post_id = (int) ($input['post_id'] ?? 0);
+                $status  = 'draft';
+                if ($post_id) {
+                    $allowed = self::require_edit_page($post_id);
+                    if (is_wp_error($allowed)) return $allowed;
+                } else {
                     if (empty($input['title'])) {
                         return new \WP_Error('missing_title', 'Title is required when creating a new page.');
                     }
+                    $status = Permissions::authorize_page_status($input['status'] ?? 'draft');
+                    if (is_wp_error($status)) return $status;
+
                     $post_id = wp_insert_post([
                         'post_title'  => sanitize_text_field($input['title']),
                         'post_name'   => sanitize_title($input['slug'] ?? $input['title']),
                         'post_type'   => 'page',
-                        'post_status' => 'publish',
+                        'post_status' => $status,
                     ]);
                     if (is_wp_error($post_id)) return $post_id;
                 }
@@ -981,6 +1044,7 @@ class Abilities_Provider {
                 return [
                     'post_id'   => $post_id,
                     'url'       => get_permalink($post_id),
+                    'status'    => get_post_status($post_id),
                     'image_ids' => $image_ids,
                 ];
             },

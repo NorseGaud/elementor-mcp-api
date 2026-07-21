@@ -10,3 +10,6 @@ Thumbs.db
 
 # WordPress
 wp-config.php
+
+.cursor
+docs

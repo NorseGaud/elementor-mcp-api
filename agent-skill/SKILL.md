@@ -17,7 +17,7 @@ Universal skill for AI-driven Elementor page editing on any WordPress site runni
 
 ## Setup
 
-Before using the API, determine the site's connection info. Check project CLAUDE.md or memory for credentials. Set variables:
+Before using the API, determine the site's connection info. Check project docs (`AGENTS.md`, `CLAUDE.md`, README) or agent memory for credentials. Set variables:
 ```bash
 API="https://{site}/wp-json/neoservice/v1"
 AUTH="{user}:{application_password}"
@@ -96,11 +96,11 @@ curl -s -X POST -u "$AUTH" -H "Content-Type: application/json" \
 curl -s -X POST -u "$AUTH" "$API/flush-css"
 ```
 
-### 5. Verify in Chrome (MANDATORY)
+### 5. Verify Visually (MANDATORY)
 After ANY visual change, always verify:
 1. `POST /flush-css` to regenerate CSS
-2. Navigate to the page using `mcp__claude-in-chrome__navigate`
-3. Take screenshot using `mcp__claude-in-chrome__computer` (action: screenshot)
+2. Open the live page URL in a browser (use whatever browser/screenshot tools your agent has — e.g. Chrome MCP, Playwright, or a manual check)
+3. Capture screenshots of the full page
 4. Scroll through ALL sections and screenshot each one
 5. Fix any issues found before moving on
 

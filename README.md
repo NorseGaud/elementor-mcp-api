@@ -20,6 +20,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 - PHP 7.4+
 - Elementor (free or Pro)
 - Authentication: WordPress Application Passwords (recommended) or cookie auth
+- Authorization: page read/write requires `edit_pages` (+ per-page `edit_post`); publish requires `publish_pages`; kit/templates/CSS flush require `manage_options`
 
 ## Installation
 
@@ -116,18 +117,20 @@ This plugin can expose its capabilities via the Model Context Protocol for direc
 
 MCP endpoint: `https://your-site.com/wp-json/mcp/mcp-adapter-default-server`
 
-## Claude Code Skill
+## Agent Skill
 
-This repo includes a ready-to-use [Claude Code](https://claude.com/claude-code) skill in `claude-skill/`. It teaches Claude how to use the API: workflows, element structures, widget settings, layout patterns, and design best practices.
+This repo includes a model-agnostic agent skill in `agent-skill/`. It teaches any AI coding agent (Claude Code, Cursor, GPT-based agents, etc.) how to use the API: workflows, element structures, widget settings, layout patterns, and design best practices.
 
 ### Install the skill
 
 ```bash
 cd elementor-mcp-api/
-bash claude-skill/install.sh
+bash agent-skill/install.sh          # Claude Code + Cursor (default)
+bash agent-skill/install.sh claude   # ~/.claude/skills/elementor-builder/
+bash agent-skill/install.sh cursor   # ~/.cursor/skills/elementor-builder/
 ```
 
-This copies the skill to `~/.claude/skills/elementor-builder/`. Restart Claude Code — then just say "build an Elementor page" and it knows how.
+Or copy `agent-skill/SKILL.md` into your agent's skills directory manually. Restart the agent — then say "build an Elementor page" and it knows how.
 
 ### What the skill provides
 
@@ -140,9 +143,12 @@ This copies the skill to `~/.claude/skills/elementor-builder/`. Restart Claude C
 ## Important Notes
 
 - **Sequential PATCH calls**: Never run multiple PATCH calls in parallel on the same page. Each PATCH loads, modifies, and saves the full page — parallel calls overwrite each other. Cross-page parallelism is safe.
-- **Flush CSS**: Always call `/flush-css` after visual changes — Elementor caches CSS aggressively.
+- **Flush CSS**: Always call `/flush-css` after visual changes — Elementor caches CSS aggressively. Requires `manage_options`.
 - **Element IDs**: Always provide valid 8-character hex IDs when creating elements.
 - **PATCH merges settings**: Only send the settings you want to change, not the full settings object.
+- **Default page status**: `POST /page` and `POST /build-page` default to `draft`. Publishing requires `publish_pages`.
+- **Media import jail**: `POST /media/import` only accepts real image files under `wp-content/uploads/elementor-mcp-import/`.
+- **MCP tools**: Registered with `public: false` — use an authenticated MCP adapter session (dedicated admin Application Password recommended).
 
 ## License
 

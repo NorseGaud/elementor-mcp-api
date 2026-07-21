@@ -240,13 +240,65 @@ class Elementor_Data {
     // ── Media ────────────────────────────────────────────────
 
     /**
-     * Import an image from a file path into the WP media library.
+     * Staging directory for filesystem imports (under uploads).
+     * Only files inside this directory may be imported.
+     */
+    public static function import_staging_dir(): string {
+        $upload_dir = wp_upload_dir();
+        $dir = trailingslashit($upload_dir['basedir']) . 'elementor-mcp-import';
+
+        if (!is_dir($dir)) {
+            wp_mkdir_p($dir);
+        }
+
+        // Prevent directory listing if the web server serves this path.
+        $index = trailingslashit($dir) . 'index.php';
+        if (!file_exists($index)) {
+            file_put_contents($index, "<?php\n// Silence is golden.\n");
+        }
+
+        return $dir;
+    }
+
+    /**
+     * Import an image from a jailed file path into the WP media library.
+     * Source must resolve inside uploads/elementor-mcp-import/ and be a real image.
      */
     public static function import_image(string $source_path, string $title = ''): int {
-        if (!file_exists($source_path)) return 0;
+        if ($source_path === '') {
+            return 0;
+        }
 
-        $filename = basename($source_path);
-        $title    = $title ?: pathinfo($filename, PATHINFO_FILENAME);
+        $staging = realpath(self::import_staging_dir());
+        $real    = realpath($source_path);
+
+        if ($staging === false || $real === false || !is_file($real)) {
+            return 0;
+        }
+
+        $staging_prefix = $staging . DIRECTORY_SEPARATOR;
+        if (!str_starts_with($real, $staging_prefix)) {
+            return 0;
+        }
+
+        $filename = basename($real);
+        $filetype = wp_check_filetype($filename);
+        $mime_ext = $filetype['type'] ?? '';
+
+        if ($mime_ext === '' || strpos($mime_ext, 'image/') !== 0) {
+            return 0;
+        }
+
+        // Content-sniff: reject non-images even with a forged extension.
+        if (!function_exists('wp_get_image_mime')) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+        }
+        $mime_file = wp_get_image_mime($real);
+        if (!$mime_file || strpos($mime_file, 'image/') !== 0) {
+            return 0;
+        }
+
+        $title = $title ?: pathinfo($filename, PATHINFO_FILENAME);
 
         // Check if already imported
         global $wpdb;
@@ -254,28 +306,38 @@ class Elementor_Data {
             "SELECT ID FROM {$wpdb->posts} WHERE post_type='attachment' AND post_title=%s LIMIT 1",
             $title
         ));
-        if ($existing) return (int) $existing;
-
-        $upload_dir = wp_upload_dir();
-        $dest = $upload_dir['path'] . '/' . $filename;
-
-        if (!file_exists($dest)) {
-            copy($source_path, $dest);
+        if ($existing) {
+            return (int) $existing;
         }
 
-        $filetype   = wp_check_filetype($filename);
-        $attach_id  = wp_insert_attachment([
-            'post_mime_type' => $filetype['type'],
-            'post_title'     => $title,
+        $upload_dir = wp_upload_dir();
+        if (!empty($upload_dir['error'])) {
+            return 0;
+        }
+
+        $dest = trailingslashit($upload_dir['path']) . wp_unique_filename($upload_dir['path'], $filename);
+
+        if (!copy($real, $dest)) {
+            return 0;
+        }
+
+        $attach_id = wp_insert_attachment([
+            'post_mime_type' => $mime_file,
+            'post_title'     => sanitize_text_field($title),
             'post_content'   => '',
             'post_status'    => 'inherit',
         ], $dest);
+
+        if (!$attach_id || is_wp_error($attach_id)) {
+            @unlink($dest);
+            return 0;
+        }
 
         require_once ABSPATH . 'wp-admin/includes/image.php';
         $metadata = wp_generate_attachment_metadata($attach_id, $dest);
         wp_update_attachment_metadata($attach_id, $metadata);
 
-        return $attach_id;
+        return (int) $attach_id;
     }
 
     // ── Widget Discovery ─────────────────────────────────────

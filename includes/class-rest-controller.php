@@ -10,8 +10,9 @@ class REST_Controller {
     const NAMESPACE = 'neoservice/v1';
 
     public function register_routes(): void {
-        $editor = ['permission_callback' => [$this, 'check_edit_permission']];
-        $reader = ['permission_callback' => [$this, 'check_read_permission']];
+        $editor  = ['permission_callback' => [$this, 'check_edit_permission']];
+        $reader  = ['permission_callback' => [$this, 'check_read_permission']];
+        $manager = ['permission_callback' => [$this, 'check_manage_permission']];
 
         // ── Pages ────────────────────────────────────────
         register_rest_route(self::NAMESPACE, '/pages', [
@@ -113,30 +114,30 @@ class REST_Controller {
             ...$editor,
         ]);
 
-        // ── Templates ────────────────────────────────────
+        // ── Templates (admin) ────────────────────────────
         register_rest_route(self::NAMESPACE, '/templates', [
             'methods'  => 'GET',
             'callback' => [$this, 'list_templates'],
-            ...$reader,
+            ...$manager,
         ]);
 
         register_rest_route(self::NAMESPACE, '/template', [
             'methods'  => 'POST',
             'callback' => [$this, 'create_template'],
-            ...$editor,
+            ...$manager,
         ]);
 
-        // ── Kit / Global Settings ────────────────────────
+        // ── Kit / Global Settings (admin) ────────────────
         register_rest_route(self::NAMESPACE, '/kit', [
             'methods'  => 'GET',
             'callback' => [$this, 'get_kit'],
-            ...$reader,
+            ...$manager,
         ]);
 
         register_rest_route(self::NAMESPACE, '/kit', [
             'methods'  => 'PUT',
             'callback' => [$this, 'update_kit'],
-            ...$editor,
+            ...$manager,
         ]);
 
         // ── Widgets ──────────────────────────────────────
@@ -165,11 +166,11 @@ class REST_Controller {
             ...$editor,
         ]);
 
-        // ── Cache ────────────────────────────────────────
+        // ── Cache (admin) ────────────────────────────────
         register_rest_route(self::NAMESPACE, '/flush-css', [
             'methods'  => 'POST',
             'callback' => [$this, 'flush_css'],
-            ...$editor,
+            ...$manager,
         ]);
 
         // ── Build (composite) ────────────────────────────
@@ -183,11 +184,38 @@ class REST_Controller {
     // ── Permission checks ────────────────────────────────────
 
     public function check_read_permission(): bool {
-        return current_user_can('read');
+        return Permissions::can_read();
     }
 
     public function check_edit_permission(): bool {
-        return current_user_can('edit_posts');
+        return Permissions::can_edit();
+    }
+
+    public function check_manage_permission(): bool {
+        return Permissions::can_manage();
+    }
+
+    /**
+     * @return \WP_REST_Response|null Error response, or null if allowed.
+     */
+    private function require_edit_page(int $post_id): ?\WP_REST_Response {
+        if (!Permissions::can_edit_page($post_id)) {
+            return new \WP_REST_Response(['error' => 'Forbidden for this page'], 403);
+        }
+        return null;
+    }
+
+    /**
+     * @return string|\WP_REST_Response Authorized status, or error response.
+     */
+    private function require_page_status(?string $status) {
+        $result = Permissions::authorize_page_status($status);
+        if (is_wp_error($result)) {
+            $data = $result->get_error_data();
+            $code = is_array($data) && isset($data['status']) ? (int) $data['status'] : 403;
+            return new \WP_REST_Response(['error' => $result->get_error_message()], $code);
+        }
+        return $result;
     }
 
     // ── Pages ────────────────────────────────────────────────
@@ -195,7 +223,7 @@ class REST_Controller {
     public function list_pages(\WP_REST_Request $request): \WP_REST_Response {
         $pages = get_posts([
             'post_type'      => 'page',
-            'post_status'    => ['publish', 'draft'],
+            'post_status'    => ['publish', 'draft', 'pending', 'private', 'future'],
             'posts_per_page' => -1,
             'orderby'        => 'menu_order',
             'order'          => 'ASC',
@@ -203,6 +231,9 @@ class REST_Controller {
 
         $result = [];
         foreach ($pages as $page) {
+            if (!Permissions::can_edit_page($page->ID)) {
+                continue;
+            }
             $has_elementor = get_post_meta($page->ID, '_elementor_edit_mode', true) === 'builder';
             $result[] = [
                 'id'            => $page->ID,
@@ -218,7 +249,11 @@ class REST_Controller {
     }
 
     public function get_page(\WP_REST_Request $request): \WP_REST_Response {
-        $id   = (int) $request['id'];
+        $id = (int) $request['id'];
+        if ($denied = $this->require_edit_page($id)) {
+            return $denied;
+        }
+
         $data = Elementor_Data::get_page_data($id);
 
         if ($data === null) {
@@ -234,7 +269,11 @@ class REST_Controller {
     }
 
     public function get_page_structure(\WP_REST_Request $request): \WP_REST_Response {
-        $id        = (int) $request['id'];
+        $id = (int) $request['id'];
+        if ($denied = $this->require_edit_page($id)) {
+            return $denied;
+        }
+
         $structure = Elementor_Data::get_page_structure($id);
 
         if ($structure === null) {
@@ -252,6 +291,10 @@ class REST_Controller {
         $id   = (int) $request['id'];
         $body = $request->get_json_params();
 
+        if ($denied = $this->require_edit_page($id)) {
+            return $denied;
+        }
+
         if (empty($body['data']) || !is_array($body['data'])) {
             return new \WP_REST_Response(['error' => 'Missing or invalid "data" array'], 400);
         }
@@ -266,30 +309,35 @@ class REST_Controller {
     }
 
     public function create_page(\WP_REST_Request $request): \WP_REST_Response {
-        $body = $request->get_json_params();
-        $title = $body['title'] ?? 'New Page';
-        $slug  = $body['slug'] ?? sanitize_title($title);
+        $body  = $request->get_json_params() ?: [];
+        $title = sanitize_text_field($body['title'] ?? 'New Page');
+        $slug  = sanitize_title($body['slug'] ?? $title);
+
+        $status = $this->require_page_status($body['status'] ?? 'draft');
+        if ($status instanceof \WP_REST_Response) {
+            return $status;
+        }
 
         $post_id = wp_insert_post([
             'post_title'  => $title,
             'post_name'   => $slug,
             'post_type'   => 'page',
-            'post_status' => $body['status'] ?? 'publish',
+            'post_status' => $status,
         ]);
 
         if (is_wp_error($post_id)) {
             return new \WP_REST_Response(['error' => $post_id->get_error_message()], 500);
         }
 
-        // If Elementor data provided, save it
         if (!empty($body['data']) && is_array($body['data'])) {
             Elementor_Data::save_page_data($post_id, $body['data']);
         }
 
         return new \WP_REST_Response([
-            'id'    => $post_id,
-            'title' => $title,
-            'url'   => get_permalink($post_id),
+            'id'     => $post_id,
+            'title'  => $title,
+            'status' => $status,
+            'url'    => get_permalink($post_id),
         ], 201);
     }
 
@@ -298,7 +346,12 @@ class REST_Controller {
     public function get_element(\WP_REST_Request $request): \WP_REST_Response {
         $page_id    = (int) $request['id'];
         $element_id = $request['element_id'];
-        $data       = Elementor_Data::get_page_data($page_id);
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
+        $data = Elementor_Data::get_page_data($page_id);
 
         if (!$data) {
             return new \WP_REST_Response(['error' => 'No Elementor data found'], 404);
@@ -315,7 +368,12 @@ class REST_Controller {
     public function add_element(\WP_REST_Request $request): \WP_REST_Response {
         $page_id = (int) $request['id'];
         $body    = $request->get_json_params();
-        $data    = Elementor_Data::get_page_data($page_id);
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
+        $data = Elementor_Data::get_page_data($page_id);
 
         if ($data === null) $data = [];
 
@@ -359,7 +417,12 @@ class REST_Controller {
         $page_id    = (int) $request['id'];
         $element_id = $request['element_id'];
         $body       = $request->get_json_params();
-        $data       = Elementor_Data::get_page_data($page_id);
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
+        $data = Elementor_Data::get_page_data($page_id);
 
         if (!$data) {
             return new \WP_REST_Response(['error' => 'No Elementor data found'], 404);
@@ -383,7 +446,12 @@ class REST_Controller {
     public function remove_element(\WP_REST_Request $request): \WP_REST_Response {
         $page_id    = (int) $request['id'];
         $element_id = $request['element_id'];
-        $data       = Elementor_Data::get_page_data($page_id);
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
+        $data = Elementor_Data::get_page_data($page_id);
 
         if (!$data) {
             return new \WP_REST_Response(['error' => 'No Elementor data found'], 404);
@@ -402,7 +470,12 @@ class REST_Controller {
     public function duplicate_element(\WP_REST_Request $request): \WP_REST_Response {
         $page_id    = (int) $request['id'];
         $element_id = $request['element_id'];
-        $data       = Elementor_Data::get_page_data($page_id);
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
+        $data = Elementor_Data::get_page_data($page_id);
 
         if (!$data) {
             return new \WP_REST_Response(['error' => 'No Elementor data found'], 404);
@@ -422,7 +495,12 @@ class REST_Controller {
         $page_id    = (int) $request['id'];
         $element_id = $request['element_id'];
         $body       = $request->get_json_params();
-        $data       = Elementor_Data::get_page_data($page_id);
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
+        $data = Elementor_Data::get_page_data($page_id);
 
         if (!$data) {
             return new \WP_REST_Response(['error' => 'No Elementor data found'], 404);
@@ -478,6 +556,10 @@ class REST_Controller {
         $body    = $request->get_json_params();
         $patches = $body['patches'] ?? [];
 
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
         if (!is_array($patches) || empty($patches)) {
             return new \WP_REST_Response(['error' => 'Missing "patches" array'], 400);
         }
@@ -527,6 +609,10 @@ class REST_Controller {
         $page_id    = (int) $request['id'];
         $element_id = $request['element_id'];
         $body       = $request->get_json_params();
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
 
         $percent = isset($body['percent']) ? (float) $body['percent'] : null;
         if ($percent === null) {
@@ -583,6 +669,10 @@ class REST_Controller {
         $eltype  = $request->get_param('elType');
         $needle  = $request->get_param('contains');
 
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
         if (!$widget && !$eltype && !$needle) {
             return new \WP_REST_Response(['error' => 'Provide at least one of: widget, elType, contains'], 400);
         }
@@ -629,6 +719,11 @@ class REST_Controller {
     public function add_section(\WP_REST_Request $request): \WP_REST_Response {
         $page_id  = (int) $request['id'];
         $body     = $request->get_json_params();
+
+        if ($denied = $this->require_edit_page($page_id)) {
+            return $denied;
+        }
+
         $data     = Elementor_Data::get_page_data($page_id) ?? [];
         $position = $body['position'] ?? -1;
         $section  = $body['section'] ?? null;
@@ -674,9 +769,9 @@ class REST_Controller {
     }
 
     public function create_template(\WP_REST_Request $request): \WP_REST_Response {
-        $body       = $request->get_json_params();
-        $title      = $body['title'] ?? 'Template';
-        $type       = $body['type'] ?? 'section';
+        $body       = $request->get_json_params() ?: [];
+        $title      = sanitize_text_field($body['title'] ?? 'Template');
+        $type       = sanitize_key($body['type'] ?? 'section');
         $data       = $body['data'] ?? [];
         $conditions = $body['conditions'] ?? ['include/general'];
 
@@ -736,7 +831,7 @@ class REST_Controller {
     // ── Media ────────────────────────────────────────────────
 
     public function import_media(\WP_REST_Request $request): \WP_REST_Response {
-        $body  = $request->get_json_params();
+        $body  = $request->get_json_params() ?: [];
         $path  = $body['path'] ?? '';
         $title = $body['title'] ?? '';
 
@@ -747,7 +842,10 @@ class REST_Controller {
         $attach_id = Elementor_Data::import_image($path, $title);
 
         if (!$attach_id) {
-            return new \WP_REST_Response(['error' => "Failed to import: $path"], 500);
+            return new \WP_REST_Response([
+                'error'   => 'Failed to import image. Path must be a real image file inside the staging directory.',
+                'staging' => Elementor_Data::import_staging_dir(),
+            ], 400);
         }
 
         return new \WP_REST_Response([
@@ -774,23 +872,32 @@ class REST_Controller {
     // ── Build Page (composite) ───────────────────────────────
 
     public function build_page(\WP_REST_Request $request): \WP_REST_Response {
-        $body = $request->get_json_params();
+        $body = $request->get_json_params() ?: [];
 
         // Create or update page
-        $page_id = $body['page_id'] ?? 0;
-        if (!$page_id) {
+        $page_id = (int) ($body['page_id'] ?? 0);
+        if ($page_id) {
+            if ($denied = $this->require_edit_page($page_id)) {
+                return $denied;
+            }
+        } else {
+            $status = $this->require_page_status($body['status'] ?? 'draft');
+            if ($status instanceof \WP_REST_Response) {
+                return $status;
+            }
+
             $page_id = wp_insert_post([
-                'post_title'  => $body['title'] ?? 'New Page',
-                'post_name'   => $body['slug'] ?? '',
+                'post_title'  => sanitize_text_field($body['title'] ?? 'New Page'),
+                'post_name'   => sanitize_title($body['slug'] ?? ($body['title'] ?? 'New Page')),
                 'post_type'   => 'page',
-                'post_status' => $body['status'] ?? 'publish',
+                'post_status' => $status,
             ]);
             if (is_wp_error($page_id)) {
                 return new \WP_REST_Response(['error' => $page_id->get_error_message()], 500);
             }
         }
 
-        // Import images if provided
+        // Import images if provided (jailed to staging dir)
         $media_map = [];
         if (!empty($body['images']) && is_array($body['images'])) {
             foreach ($body['images'] as $key => $img) {

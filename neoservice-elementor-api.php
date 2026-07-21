@@ -15,6 +15,7 @@ define('NEOSERVICE_ELEMENTOR_API_VERSION', '1.3.0');
 define('NEOSERVICE_ELEMENTOR_API_PATH', plugin_dir_path(__FILE__));
 
 // Load core includes
+require_once NEOSERVICE_ELEMENTOR_API_PATH . 'includes/class-permissions.php';
 require_once NEOSERVICE_ELEMENTOR_API_PATH . 'includes/class-element-factory.php';
 require_once NEOSERVICE_ELEMENTOR_API_PATH . 'includes/class-elementor-data.php';
 require_once NEOSERVICE_ELEMENTOR_API_PATH . 'includes/class-rest-controller.php';
@@ -47,13 +48,14 @@ add_action('wp_abilities_api_init', function () {
 });
 
 // ── Post Meta Registration ──────────────────────────────────
+// Keep _elementor_data out of core REST; use neoservice/v1 endpoints instead.
 add_action('init', function () {
     register_post_meta('page', '_elementor_data', [
-        'show_in_rest' => true,
-        'single' => true,
-        'type' => 'string',
+        'show_in_rest' => false,
+        'single'       => true,
+        'type'         => 'string',
         'auth_callback' => function () {
-            return current_user_can('edit_posts');
+            return current_user_can('edit_pages');
         },
     ]);
 });
