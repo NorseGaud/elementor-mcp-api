@@ -212,16 +212,6 @@ When WordPress and WP-CLI are available on the same machine:
 }
 ```
 
-#### Where to put the file
-
-| Client | Config location |
-|--------|-----------------|
-| Cursor | `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project) |
-| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) |
-| VS Code | `.vscode/mcp.json` (often uses a top-level `"servers"` key instead of `"mcpServers"`) |
-
-After saving, restart the client (or reload MCP servers) so the new tools appear. Abilities from this plugin register with `public: false`, so authentication is required — use a dedicated Application Password, not your main login password.
-
 ## Agent Skill
 
 This repo includes a model-agnostic agent skill in `agent-skill/`. It teaches any AI coding agent (Claude Code, Cursor, GPT-based agents, etc.) how to use the API: workflows, element structures, widget settings, layout patterns, and design best practices.
@@ -230,9 +220,10 @@ This repo includes a model-agnostic agent skill in `agent-skill/`. It teaches an
 
 ```bash
 cd /path/to/this/repo
-bash agent-skill/install.sh          # Claude Code + Cursor (default)
-bash agent-skill/install.sh claude   # ~/.claude/skills/elementor-builder/
-bash agent-skill/install.sh cursor   # ~/.cursor/skills/elementor-builder/
+bash agent-skill/install.sh            # Claude Code + Cursor (default)
+bash agent-skill/install.sh claude     # ~/.claude/skills/mcp-api-for-elementor/
+bash agent-skill/install.sh cursor     # ~/.cursor/skills/mcp-api-for-elementor/
+bash agent-skill/install.sh uninstall  # remove from Claude Code + Cursor
 ```
 
 Or copy `agent-skill/SKILL.md` into your agent's skills directory manually. Restart the agent — then say "build an Elementor page" and it knows how.
