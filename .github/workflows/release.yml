@@ -366,8 +366,8 @@ jobs:
           BRANCH="${{ github.ref_name }}"
           MODE="${{ steps.version.outputs.mode }}"
           # Annotated tags need an identity even when rerelease skips the bump commit.
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "NorseGaud"
+          git config user.email "norsegaud@gmail.com"
           git tag -a "${TAG}" -m "Release ${VERSION}"
           if [[ "${MODE}" == "bump" ]]; then
             git push origin "HEAD:refs/heads/${BRANCH}"
