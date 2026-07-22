@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Tag, zip, and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Resolve plugin version
+        id: version
+        run: |
+          set -euo pipefail
+          php <<'PHP'
+          <?php
+          $file = 'elementor-mcp-api.php';
+          $contents = file_get_contents($file);
+          if ($contents === false) {
+              fwrite(STDERR, "Unable to read {$file}\n");
+              exit(1);
+          }
+          if (!preg_match('/^\s*\*\s*Version:\s*(.+)$/mi', $contents, $header)) {
+              fwrite(STDERR, "Could not parse Version header from {$file}\n");
+              exit(1);
+          }
+          if (!preg_match("/define\(\s*'ELEMENTOR_MCP_API_VERSION'\s*,\s*'([^']+)'\s*\)/", $contents, $constant)) {
+              fwrite(STDERR, "Could not parse ELEMENTOR_MCP_API_VERSION from {$file}\n");
+              exit(1);
+          }
+          $header_version = trim($header[1]);
+          $const_version = trim($constant[1]);
+          if ($header_version === '' || $const_version === '') {
+              fwrite(STDERR, "Empty version value in {$file}\n");
+              exit(1);
+          }
+          if ($header_version !== $const_version) {
+              fwrite(STDERR, "Version mismatch: header={$header_version} constant={$const_version}\n");
+              exit(1);
+          }
+          if (!preg_match('/^\d+\.\d+\.\d+/', $header_version)) {
+              fwrite(STDERR, "Unexpected version format: {$header_version}\n");
+              exit(1);
+          }
+          $tag = 'v' . $header_version;
+          $output = getenv('GITHUB_OUTPUT');
+          if ($output === false || $output === '') {
+              fwrite(STDERR, "GITHUB_OUTPUT is not set\n");
+              exit(1);
+          }
+          file_put_contents($output, "version={$header_version}\n", FILE_APPEND);
+          file_put_contents($output, "tag={$tag}\n", FILE_APPEND);
+          echo "Resolved version {$header_version} (tag {$tag})\n";
+          PHP
+
+      - name: PHP syntax check
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            php -l "$file"
+          done < <(find elementor-mcp-api.php includes -name '*.php' -print0)
+
+      - name: PHPCS
+        run: composer lint
+
+      - name: PHPUnit
+        run: composer test
+
+      - name: Ensure tag does not already exist
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.version.outputs.tag }}"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists locally. Bump the version in elementor-mcp-api.php first."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists on origin. Bump the version in elementor-mcp-api.php first."
+            exit 1
+          fi
+
+      - name: Build plugin zip
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          SLUG="elementor-mcp-api"
+          STAGE="$(mktemp -d)"
+          DEST="${STAGE}/${SLUG}"
+          mkdir -p "${DEST}/includes"
+
+          cp elementor-mcp-api.php "${DEST}/"
+          cp includes/*.php "${DEST}/includes/"
+
+          ZIP_NAME="${SLUG}-${VERSION}.zip"
+          (
+            cd "${STAGE}"
+            zip -r "${GITHUB_WORKSPACE}/${ZIP_NAME}" "${SLUG}"
+          )
+          echo "Built ${ZIP_NAME}"
+          unzip -l "${ZIP_NAME}"
+
+      - name: Create and push tag
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "Release ${VERSION}"
+          git push origin "${TAG}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: elementor-mcp-api-${{ steps.version.outputs.version }}.zip

@@ -36,6 +36,7 @@ DEFAULT_WORKERS = 8
 # Dev/docs/tooling only — not required for the plugin to run in WordPress.
 SKIP_NAMES = {
     ".git",
+    ".github",
     ".gitignore",
     ".DS_Store",
     ".cursor",
@@ -45,6 +46,13 @@ SKIP_NAMES = {
     "AGENTS.md",
     "LICENSE",
     "agent-skill",
+    "docs",
+    "tests",
+    "vendor",
+    "composer.json",
+    "composer.lock",
+    "phpcs.xml.dist",
+    "phpunit.xml.dist",
 }
 
 _print_lock = threading.Lock()

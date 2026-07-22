@@ -11,5 +11,8 @@ Thumbs.db
 # WordPress
 wp-config.php
 
+# Composer / tooling
+/vendor/
+
 .cursor
 docs

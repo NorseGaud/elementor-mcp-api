@@ -1,0 +1,81 @@
+<?xml version="1.0"?>
+<ruleset name="Elementor MCP API">
+    <description>Coding standards for Elementor MCP API</description>
+
+    <file>elementor-mcp-api.php</file>
+    <file>includes</file>
+
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+
+    <arg name="basepath" value="."/>
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="8"/>
+    <arg value="s"/>
+    <arg value="p"/>
+    <!-- Fail CI on errors and warnings so the baseline stays intentional. -->
+    <arg name="warning-severity" value="5"/>
+    <arg name="error-severity" value="5"/>
+
+    <config name="minimum_supported_wp_version" value="6.0"/>
+    <config name="testVersion" value="7.4-"/>
+
+    <!--
+      Practical baseline: keep WordPress rules that catch risky patterns,
+      exclude style/spacing conventions that would force a full rewrite.
+    -->
+    <rule ref="WordPress">
+        <!-- Style / formatting -->
+        <exclude name="Generic.WhiteSpace.DisallowSpaceIndent"/>
+        <exclude name="Generic.WhiteSpace.ScopeIndent"/>
+        <exclude name="Generic.WhiteSpace.ArbitraryParenthesesSpacing"/>
+        <exclude name="Generic.Formatting.MultipleStatementAlignment"/>
+        <exclude name="Generic.Functions.FunctionCallArgumentSpacing"/>
+        <exclude name="Generic.ControlStructures.InlineControlStructure"/>
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="Universal.WhiteSpace.PrecisionAlignment"/>
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
+        <exclude name="Universal.Operators.StrictComparisons"/>
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="NormalizedArrays.Arrays.ArrayBraceSpacing"/>
+        <exclude name="WordPress.Arrays.MultipleStatementAlignment"/>
+        <exclude name="WordPress.Arrays.ArrayIndentation"/>
+        <exclude name="WordPress.Arrays.ArrayDeclarationSpacing"/>
+        <exclude name="WordPress.Arrays.ArrayKeySpacingRestrictions"/>
+        <exclude name="WordPress.WhiteSpace.ControlStructureSpacing"/>
+        <exclude name="WordPress.WhiteSpace.OperatorSpacing"/>
+        <exclude name="WordPress.WhiteSpace.CastStructureSpacing"/>
+        <exclude name="WordPress.PHP.YodaConditions"/>
+        <exclude name="PEAR.Functions.FunctionCallSignature"/>
+        <exclude name="PSR2.Methods.FunctionCallSignature"/>
+        <exclude name="PSR2.Classes.ClassDeclaration"/>
+        <exclude name="PSR2.Methods.MethodDeclaration"/>
+        <exclude name="Squiz.Functions.MultiLineFunctionDeclaration"/>
+        <exclude name="Squiz.Functions.FunctionDeclarationArgumentSpacing"/>
+        <exclude name="Squiz.Commenting"/>
+        <exclude name="Generic.Commenting.DocComment"/>
+
+        <!-- Naming / i18n / security (REST uses capability checks separately) -->
+        <exclude name="WordPress.Files.FileName"/>
+        <exclude name="WordPress.NamingConventions.PrefixAllGlobals"/>
+        <exclude name="WordPress.NamingConventions.ValidFunctionName"/>
+        <exclude name="WordPress.NamingConventions.ValidVariableName"/>
+        <exclude name="WordPress.WP.I18n"/>
+        <exclude name="WordPress.Security.EscapeOutput"/>
+        <exclude name="WordPress.Security.NonceVerification"/>
+        <exclude name="WordPress.Security.ValidatedSanitizedInput"/>
+
+        <!-- Common WP patterns used in this plugin -->
+        <exclude name="WordPress.PHP.StrictInArray"/>
+        <exclude name="WordPress.PHP.DontExtract"/>
+        <exclude name="WordPress.PHP.NoSilencedErrors"/>
+        <exclude name="WordPress.DateTime.RestrictedFunctions"/>
+        <exclude name="WordPress.DB.PreparedSQL"/>
+        <exclude name="WordPress.DB.SlowDBQuery"/>
+        <exclude name="WordPress.DB.DirectDatabaseQuery"/>
+        <exclude name="WordPress.WP.AlternativeFunctions"/>
+        <exclude name="Generic.CodeAnalysis.AssignmentInCondition"/>
+        <exclude name="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+        <exclude name="Squiz.PHP.DisallowMultipleAssignments"/>
+    </rule>
+</ruleset>
