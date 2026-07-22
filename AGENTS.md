@@ -1,2 +1,3 @@
 - Never include any mention of cursor in the commit message.
 - IF there are major changes to files/structure, make sure the upload-sftp.py script is updated to support them.
+- Make sure that the readme.txt stays up to date for the wordpress.org plugin listing.

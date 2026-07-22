@@ -197,7 +197,47 @@ GPL-3.0 — see [LICENSE](LICENSE)
 2. Activate the plugin in WordPress admin
 3. Create an Application Password in **Users → Your Profile → Application Passwords**
 
-### Deploy over SFTP (Dev only)
+## Development
+
+### Requirements
+
+| Tool | Version | Notes |
+|------|---------|--------|
+| PHP | 8.0+ (8.1 recommended) | Same floor as the plugin; CI uses 8.1 |
+| [Composer](https://getcomposer.org/) | 2.x | Dev deps: PHPCS, WPCS, PHPUnit |
+| Git | any recent | Pre-commit hook lives in `.githooks/` |
+| Python 3 | optional | Only for `upload-sftp.py` (`pip install paramiko`) |
+
+Runtime stack for local testing is unchanged: WordPress 6.9+, Elementor, and [MCP Adapter](https://github.com/WordPress/mcp-adapter) if you exercise MCP.
+
+### Setup
+
+```bash
+git clone https://github.com/NorseGaud/mcp-api-for-elementor.git
+cd mcp-api-for-elementor
+composer install
+git config core.hooksPath .githooks
+```
+
+`composer install` creates `vendor/` (gitignored), including `vendor/bin/phpcs`. Without it, the pre-commit hook fails with a clear error.
+
+Point `core.hooksPath` at `.githooks` once per clone so PHPCS runs on staged plugin PHP before each commit.
+
+### Lint and tests
+
+```bash
+composer lint        # PHPCS (WordPress Coding Standards via phpcs.xml.dist)
+composer lint:fix   # Auto-fix what PHPCS can
+composer test        # PHPUnit (phpunit.xml.dist)
+```
+
+CI on the `edge` branch also runs PHP syntax checks, PHPCS, PHPUnit, and WordPress Plugin Check (strict) against a release-shaped package.
+
+### Pre-commit
+
+`.githooks/pre-commit` lints staged files under `mcp-api-for-elementor.php` and `includes/**` with the same ruleset as CI. Install deps and enable the hooks path (see [Setup](#setup)) before committing.
+
+### Deploy over SFTP
 
 Use `upload-sftp.py` from the repo root to push the plugin into a remote WordPress `wp-content/plugins/` directory. Requires [paramiko](https://www.paramiko.org/) (`pip install paramiko`).
 
