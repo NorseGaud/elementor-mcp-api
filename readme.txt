@@ -4,7 +4,7 @@ Tags: elementor, rest-api, mcp, ai, api
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 3.1.0
+Stable tag: 3.2.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -65,6 +65,18 @@ Page read/write requires `edit_pages` (plus per-page `edit_post`). Publishing re
 Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the latest workflow, tool catalog, layout patterns, and gotchas for the installed plugin version. No local skill file is required.
 
 == Changelog ==
+
+
+= 3.2.0 =
+
+* release workflow fix
+* hook lint
+* hook lint
+* hook lint
+* hook lint
+* * Add get/update page settings tools for Elementor document Body Style (`_elementor_page_settings`). * REST: GET/PATCH `/page/{id}/settings` with merge + optional `unset` key removal. * MCP: `mcp-api-for-elementor-get-page-settings` and `mcp-api-for-elementor-update-page-settings`.
+* readme
+* workflow fix
 
 = 3.0.0 =
 
