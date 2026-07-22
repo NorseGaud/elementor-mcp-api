@@ -60,10 +60,6 @@ No. The REST API works without it. Install WordPress MCP Adapter only if you wan
 
 Page read/write requires `edit_pages` (plus per-page `edit_post`). Publishing requires `publish_pages`. Kit, templates, and CSS flush require `manage_options`.
 
-= Will my old elementor-mcp-api URLs still work? =
-
-No. Version 2.1.1+ uses the `mcp-api-for-elementor` namespace and tool names only. Update clients and MCP configs.
-
 = How do AI agents get building instructions? =
 
 Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the latest workflow, tool catalog, layout patterns, and gotchas for the installed plugin version. No local skill file is required.
@@ -72,37 +68,22 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 
 = 3.0.0 =
 
-All changes from 2.1.5 and later.
-
-= 2.1.5 =
 * Require WordPress 6.9+ (matches Abilities API usage checked by Plugin Check).
 * Replace mt_rand/strip_tags/unlink with wp_rand/wp_strip_all_tags/wp_delete_file.
-
-= 2.1.4 =
 * Require PHP 8.0+ (matches runtime use of PHP 8 APIs).
 * Update Tested up to WordPress 7.0.
 * Include instructions-guidance.md in the release zip for get-instructions.
 * Prefer uploads jail `mcp-api-for-elementor-import/` (legacy `elementor-mcp-import/` still accepted).
-
-= 2.1.3 =
 * Add `mcp-api-for-elementor-get-instructions` MCP tool (auto tool catalog + static guidance).
 * Remove local `agent-skill` install path; instructions are served from the plugin.
-
-= 2.1.2 =
 * Rename plugin to MCP API for Elementor for WordPress.org trademark compliance.
 * Hard cutover of REST namespace, MCP server ID, and ability IDs to `mcp-api-for-elementor`.
 * Add WordPress.org `readme.txt` and plugin dependency header for Elementor.
 
 == Upgrade Notice ==
 
-= 2.1.5 =
-Requires WordPress 6.9 or later.
-
-= 2.1.4 =
-Requires PHP 8.0+. Media import jail path is now `uploads/mcp-api-for-elementor-import/` (legacy path still works).
-
-= 2.1.3 =
-New MCP tool `get-instructions` replaces the local agent skill. Call it before Elementor page work.
-
-= 2.1.2 =
-Breaking rename: update REST/MCP URLs and tool names from `elementor-mcp-api` to `mcp-api-for-elementor`.
+= 3.0.0 =
+* Requires WordPress 6.9 or later.
+* Requires PHP 8.0+. Media import jail path is now `uploads/mcp-api-for-elementor-import/` (legacy path still works).
+* New MCP tool `get-instructions` replaces the local agent skill. Call it before Elementor page work.
+* Breaking rename: update REST/MCP URLs and tool names from `elementor-mcp-api` to `mcp-api-for-elementor`.
