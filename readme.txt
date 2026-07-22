@@ -4,7 +4,7 @@ Tags: elementor, rest-api, mcp, ai, api
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -24,6 +24,7 @@ Features:
 * Global kit management (colors, fonts, and site-wide settings)
 * Widget discovery and control schemas
 * MCP support via the WordPress Abilities API and WordPress MCP Adapter
+* get-instructions MCP tool returns always-current agent guidance from the plugin
 * CSS cache flush after visual changes
 
 Requirements:
@@ -63,7 +64,15 @@ Page read/write requires `edit_pages` (plus per-page `edit_post`). Publishing re
 
 No. Version 2.1.1+ uses the `mcp-api-for-elementor` namespace and tool names only. Update clients and MCP configs.
 
+= How do AI agents get building instructions? =
+
+Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the latest workflow, tool catalog, layout patterns, and gotchas for the installed plugin version. No local skill file is required.
+
 == Changelog ==
+
+= 2.1.3 =
+* Add `mcp-api-for-elementor-get-instructions` MCP tool (auto tool catalog + static guidance).
+* Remove local `agent-skill` install path; instructions are served from the plugin.
 
 = 2.1.2 =
 * Rename plugin to MCP API for Elementor for WordPress.org trademark compliance.
@@ -71,6 +80,9 @@ No. Version 2.1.1+ uses the `mcp-api-for-elementor` namespace and tool names onl
 * Add WordPress.org `readme.txt` and plugin dependency header for Elementor.
 
 == Upgrade Notice ==
+
+= 2.1.3 =
+New MCP tool `get-instructions` replaces the local agent skill. Call it before Elementor page work.
 
 = 2.1.2 =
 Breaking rename: update REST/MCP URLs and tool names from `elementor-mcp-api` to `mcp-api-for-elementor`.

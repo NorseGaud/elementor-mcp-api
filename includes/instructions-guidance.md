@@ -1,136 +1,35 @@
----
-name: mcp-api-for-elementor
-description: |
-  Universal AI-driven Elementor page building via MCP API for Elementor.
-  Use when the user:
-  - Wants to create, edit, or modify Elementor pages on any WordPress site
-  - Wants to update page sections, widgets, or styles
-  - Mentions "elementor", "page builder", "staging site", "mcp-api-for-elementor"
-  - Wants to add/remove/update sections on a WordPress page
-  - Wants to check or modify the Elementor global kit (colors, fonts)
-  - Wants to create headers, footers, or templates
----
-
-# MCP API for Elementor Skill
-
-Universal skill for AI-driven Elementor page editing on any WordPress site running the MCP API for Elementor plugin.
-
-## Setup
-
-Before using the API, determine the site's connection info. Check project docs (`AGENTS.md`, `CLAUDE.md`, README) or agent memory for credentials. Set variables:
-```bash
-API="https://{site}/wp-json/mcp-api-for-elementor/v1"
-AUTH="{user}:{application_password}"
-```
+# Building guidance
 
 ## Workflow
 
-### 1. Discover: Understand the Site
-```bash
-# List all pages
-curl -s -u "$AUTH" "$API/pages" | python3 -m json.tool
+### 1. Discover
+- `mcp-api-for-elementor-list-pages` — pages and Elementor status
+- `mcp-api-for-elementor-list-widgets` — available widgets (core, Pro, extensions)
+- `mcp-api-for-elementor-get-kit` — global colors/fonts
 
-# List available widgets (includes theme + plugin widgets)
-curl -s -u "$AUTH" "$API/widgets" | python3 -c "import json,sys; [print(w['name']) for w in json.load(sys.stdin)]"
+### 2. Explore
+- Always start with `mcp-api-for-elementor-get-page-structure` (lightweight IDs, types, hints)
+- Use `mcp-api-for-elementor-get-element` for one element
+- Use `mcp-api-for-elementor-get-page-data` only when you need the full tree
 
-# Get global kit settings (colors, fonts)
-curl -s -u "$AUTH" "$API/kit" | python3 -m json.tool
-```
+### 3. Edit
+- `mcp-api-for-elementor-update-element` — merge settings (send only changes)
+- `mcp-api-for-elementor-add-element` / `remove-element` / `duplicate-element` / `move-element`
+- `mcp-api-for-elementor-generate-element` — well-formed element JSON via Element Factory
+- `mcp-api-for-elementor-create-page` / `build-page` — new or full-page builds
+- `mcp-api-for-elementor-update-page-meta` — title, slug, status, Yoast (not layout)
+- Prefer `generate-element` before `add-element` when constructing new widgets
 
-### 2. Explore: Understand Page Structure
-```bash
-# Get page structure (ALWAYS start here — lightweight, shows IDs + types + hints)
-curl -s -u "$AUTH" "$API/page/{ID}/structure" | python3 -m json.tool
+### 4. Flush CSS (required after visual changes)
+Call `mcp-api-for-elementor-flush-css` (optional `post_id`). Requires `manage_options`.
 
-# Get a single element's full data (avoids loading whole page)
-curl -s -u "$AUTH" "$API/page/{PAGE_ID}/element/{ELEMENT_ID}" | python3 -m json.tool
+### 5. Verify visually (mandatory)
+1. Flush CSS
+2. Open the live page URL and screenshot / inspect all sections
+3. Fix issues before continuing
 
-# Get full page data (heavy — use structure first!)
-curl -s -u "$AUTH" "$API/page/{ID}" | python3 -m json.tool
-# NOTE: Returns elements under the `data` key (NOT `elementor_data`)
-```
+Never skip verification — the API may succeed while CSS still serves stale output.
 
-### 3. Edit: Make Changes
-```bash
-# Update element settings (PATCH = merge, only send changed settings)
-curl -s -X PATCH -u "$AUTH" -H "Content-Type: application/json" \
-  -d '{"settings":{"title":"New Title","title_color":"#333"}}' \
-  "$API/page/{PAGE_ID}/element/{ELEMENT_ID}"
-
-# Add element (position: 0-based index, -1 = append; parent_id: null = root)
-curl -s -X POST -u "$AUTH" -H "Content-Type: application/json" \
-  -d '{"parent_id":null,"position":3,"element":{...}}' \
-  "$API/page/{PAGE_ID}/element"
-
-# Move element to new position/parent
-curl -s -X POST -u "$AUTH" -H "Content-Type: application/json" \
-  -d '{"parent_id":null,"position":2}' \
-  "$API/page/{PAGE_ID}/element/{ELEMENT_ID}/move"
-
-# (v1.3) Bulk PATCH — N updates in ONE page load/save (much faster)
-curl -s -X POST -u "$AUTH" -H "Content-Type: application/json" \
-  -d '{"patches":[{"id":"a1","settings":{...}},{"id":"a2","settings":{...}}]}' \
-  "$API/page/{PAGE_ID}/elements/patch-bulk"
-
-# (v1.3) Set flex column width — handles Elementor v4 quirk (_flex_size + _inline_size + width together)
-curl -s -X PATCH -u "$AUTH" -H "Content-Type: application/json" \
-  -d '{"percent":25,"tablet":50,"mobile":100}' \
-  "$API/page/{PAGE_ID}/element/{ELEMENT_ID}/column-width"
-
-# (v1.3) Find elements by widget type, elType, or text in settings
-curl -s -u "$AUTH" "$API/page/{PAGE_ID}/find?widget=wd_banner"
-curl -s -u "$AUTH" "$API/page/{PAGE_ID}/find?elType=container"
-curl -s -u "$AUTH" "$API/page/{PAGE_ID}/find?contains=Nouveautés"
-
-# Remove / Duplicate
-curl -s -X DELETE -u "$AUTH" "$API/page/{PAGE_ID}/element/{ELEMENT_ID}"
-curl -s -X POST -u "$AUTH" "$API/page/{PAGE_ID}/element/{ELEMENT_ID}/duplicate"
-
-# Create new page
-curl -s -X POST -u "$AUTH" -H "Content-Type: application/json" \
-  -d '{"title":"Page Name","slug":"page-slug","data":[...elements...]}' "$API/page"
-```
-
-### 4. Flush CSS (REQUIRED after any visual change)
-```bash
-curl -s -X POST -u "$AUTH" "$API/flush-css"
-```
-
-### 5. Verify Visually (MANDATORY)
-After ANY visual change, always verify:
-1. `POST /flush-css` to regenerate CSS
-2. Open the live page URL in a browser (use whatever browser/screenshot tools your agent has — e.g. Chrome MCP, Playwright, or a manual check)
-3. Capture screenshots of the full page
-4. Scroll through ALL sections and screenshot each one
-5. Fix any issues found before moving on
-
-Never skip verification — the API may succeed but CSS may cache old values.
-
-## API Endpoints Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/pages` | List all pages |
-| GET | `/page/{id}` | Full Elementor data (returns `data` key) |
-| GET | `/page/{id}/structure` | Compact structure tree |
-| GET | `/page/{id}/element/{eid}` | Single element full data |
-| PUT | `/page/{id}` | Replace all page data |
-| POST | `/page` | Create new page |
-| POST | `/page/{id}/element` | Add element (`parent_id`, `position`) |
-| PATCH | `/page/{id}/element/{eid}` | Update element settings (merge) |
-| DELETE | `/page/{id}/element/{eid}` | Remove element |
-| POST | `/page/{id}/element/{eid}/duplicate` | Duplicate element |
-| POST | `/page/{id}/element/{eid}/move` | Move element |
-| POST | `/page/{id}/section` | Add root-level section |
-| GET | `/templates` | List templates |
-| POST | `/template` | Create template |
-| GET | `/kit` | Get global kit settings |
-| PUT | `/kit` | Update global kit settings |
-| GET | `/widgets` | List all available widgets |
-| GET | `/widget/{name}/schema` | Widget control schema |
-| GET | `/widget/{name}/defaults` | Ready-to-use element JSON with defaults |
-| POST | `/flush-css` | Flush CSS cache |
-| POST | `/build-page` | Create/update full page |
 
 ## Elementor Element Structure
 
@@ -293,7 +192,7 @@ Hero + two-column (info left with icon-list, form right) + Google Maps on accent
 - Alternate image position: Image LEFT → Image RIGHT → Image LEFT
 - Odd rows (1st, 3rd): image container first, text container second
 - Even rows (2nd, 4th): text container first, image container second
-- After layout changes, verify via structure endpoint
+- After layout changes, verify via `mcp-api-for-elementor-get-page-structure`
 
 ### Icons
 - **Every icon MUST be unique and contextual** — never use the same icon for all items in a row
@@ -337,7 +236,8 @@ Apply on the header template's main container:
 - **3 columns + gap**: 3×33% + 2×gap can overflow. Use `flex_wrap: "nowrap"` or reduce widths
 
 ### Elementor v4 container widths (CRITICAL)
-On Elementor 4.x, setting `width: {size: 25, unit: "%"}` ALONE on an inner container is **not enough** — the column still renders full-width. Three settings must be set together:
+On Elementor 4.x, setting `width: {size: 25, unit: "%"}` ALONE on an inner container is **not enough** — the column still renders full-width. Set all three together via `mcp-api-for-elementor-update-element` (or include them when adding the container):
+
 ```json
 {
   "_flex_size": "custom",
@@ -345,29 +245,21 @@ On Elementor 4.x, setting `width: {size: 25, unit: "%"}` ALONE on an inner conta
   "width": {"size": 25, "unit": "%"}
 }
 ```
-Use the helper endpoint to avoid this footgun:
-```bash
-curl -X PATCH -u "$AUTH" -H "Content-Type: application/json" \
-  -d '{"percent":25,"tablet":50,"mobile":100}' \
-  "$API/page/{PAGE_ID}/element/{ELEMENT_ID}/column-width"
-```
-This sets all three (plus responsive variants) in one call.
+
+Add responsive variants as needed (`width_tablet`, `width_mobile`, and matching `_inline_size_*` if the schema exposes them).
 
 ## Critical API Gotchas
 
-### Race Condition: NEVER PATCH in parallel on the same page!
-Each PATCH loads the full page data, modifies one element, then saves the whole page. If two PATCH calls run simultaneously on the same page, the second overwrites the first. **Always run PATCH calls SEQUENTIALLY per page.** Cross-page parallelism is safe.
+### Race condition: never write in parallel on the same page
+Each write tool loads the full page data, modifies it, then saves the whole page. Parallel writes on the same page overwrite each other. **Always run write tools sequentially per page.** Cross-page parallelism is safe.
 
-### Other Rules
-- Always use **structure** endpoint first (lightweight) before fetching full data
-- Use **GET element** to inspect a single element without loading the whole page
-- Use `PATCH` to merge settings — don't need to send all settings, only changes
-- Element IDs are 8-char hex strings (e.g., `f8703b57`) — always provide valid ones when creating
-- `position` is 0-based; use -1 to append at end
-- For root-level inserts: `parent_id: null`
-- Use **move** endpoint to reorder without remove+add
-- Set `$API` and `$AUTH` variables at start for shorter commands
-- Use `python3 -c "..."` for inline JSON parsing (not `python3 -m json.tool` which fails on empty responses)
-- After adding a page, use WP-CLI (`php wp-cli.phar menu item add-post {menu} {page_id}`) to add it to navigation
-- Widget discovery: `GET /widgets` returns ALL registered widgets (core + pro + extensions)
-- Widget defaults: `GET /widget/{name}/defaults` returns a ready-to-use element JSON with all defaults populated
+### Other rules
+- Prefer **get-page-structure** before **get-page-data**
+- Use **get-element** to inspect a single element
+- **update-element** merges settings — send only changes
+- Element IDs are 8-char hex strings (e.g. `f8703b57`) — always provide valid ones when creating
+- `position` is 0-based; use `-1` to append
+- Root-level inserts: omit `parent_id` or pass null
+- Use **move-element** to reorder (do not remove+add)
+- Use **list-widgets** / **get-widget-schema** to discover widget controls
+- After creating a page, add it to navigation in WordPress admin (or your usual menu workflow)

@@ -76,6 +76,7 @@ class Abilities_Provider {
      */
     public static function get_tool_ability_names(): array {
         return [
+            'mcp-api-for-elementor/get-instructions',
             'mcp-api-for-elementor/list-pages',
             'mcp-api-for-elementor/get-page-structure',
             'mcp-api-for-elementor/get-page-data',
@@ -104,12 +105,46 @@ class Abilities_Provider {
      * Register all MCP API for Elementor abilities.
      */
     public static function register(): void {
+        self::register_instructions_ability();
         self::register_page_abilities();
         self::register_element_abilities();
         self::register_template_abilities();
         self::register_kit_abilities();
         self::register_widget_abilities();
         self::register_utility_abilities();
+    }
+
+    // ── Instructions ────────────────────────────────────────
+
+    private static function register_instructions_ability(): void {
+        if (!class_exists(Instructions_Composer::class)) {
+            require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-instructions-composer.php';
+        }
+
+        wp_register_ability('mcp-api-for-elementor/get-instructions', [
+            'label'       => 'Get Instructions',
+            'description' => 'Return the latest Elementor page-building instructions for this plugin (workflow, tool catalog, patterns, and gotchas). Call this first before any Elementor page work.',
+            'category'    => 'mcp-api-for-elementor',
+            'output_schema' => [
+                'type'       => 'object',
+                'required'   => ['markdown', 'plugin_version'],
+                'properties' => [
+                    'markdown' => [
+                        'type'        => 'string',
+                        'description' => 'Full instructions document in Markdown.',
+                    ],
+                    'plugin_version' => [
+                        'type'        => 'string',
+                        'description' => 'Plugin version that produced the document.',
+                    ],
+                ],
+            ],
+            'execute_callback' => static function ($input = []) {
+                return Instructions_Composer::build();
+            },
+            'permission_callback' => [self::class, 'can_read'],
+            'meta' => self::meta_read(),
+        ]);
     }
 
     // ── Page Abilities ──────────────────────────────────────

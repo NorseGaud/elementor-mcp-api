@@ -44,7 +44,6 @@ SKIP_NAMES = {
     "upload-sftp.py",
     "README.md",
     "AGENTS.md",
-    "agent-skill",
     "docs",
     "tests",
     "vendor",

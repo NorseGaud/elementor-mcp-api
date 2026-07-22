@@ -13,7 +13,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 - **Element operations** — add, remove, duplicate, move elements in the page tree
 - **Global kit management** — read/write colors, fonts, and site-wide settings
 - **Widget discovery** — list all available widgets and get their control schemas
-- **MCP protocol support** — auto-registers 21 abilities via the core [Abilities API](https://developer.wordpress.org/apis/abilities-api/) when [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active
+- **MCP protocol support** — auto-registers 22 abilities via the core [Abilities API](https://developer.wordpress.org/apis/abilities-api/) when [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active, including `get-instructions` for always-current agent guidance
 - **CSS cache management** — flush Elementor CSS after changes
 
 ## Requirements
@@ -65,6 +65,7 @@ MCP tools use the names below exactly as shown in the client (ability `mcp-api-f
 
 | Method | Endpoint | MCP Tool | Description |
 |--------|----------|----------|-------------|
+| — | — | `mcp-api-for-elementor-get-instructions` | Latest agent instructions (workflow, tool catalog, patterns, gotchas) |
 | GET | `/pages` | `mcp-api-for-elementor-list-pages` | List WordPress pages with Elementor status |
 | GET | `/page/{id}/structure` | `mcp-api-for-elementor-get-page-structure` | Compact page tree (IDs, types, hints) |
 | GET | `/page/{id}` | `mcp-api-for-elementor-get-page-data` | Full Elementor element tree |
@@ -142,7 +143,7 @@ This plugin can expose its capabilities via the Model Context Protocol for direc
 1. Use **WordPress 6.9+** — the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) ships in core ([standalone plugin archived](https://github.com/WordPress/abilities-api/issues/160); no separate Abilities install needed)
 2. Install and activate the official [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin  
    Download the latest `mcp-adapter.zip` from [Releases](https://github.com/WordPress/mcp-adapter/releases) → Plugins → Add New → Upload Plugin → Activate
-3. Activate this plugin — it auto-registers 21 abilities and a dedicated MCP server (no extra WordPress config)
+3. Activate this plugin — it auto-registers 22 abilities and a dedicated MCP server (no extra WordPress config)
 4. Create an Application Password for a user with the capabilities you need (admin recommended)
 5. Verify the MCP route exists (must not 404):
 
@@ -152,6 +153,7 @@ This plugin can expose its capabilities via the Model Context Protocol for direc
 
    A working install returns something other than `404`. If you still get `404`, MCP Adapter is missing/inactive — the REST API under `/wp-json/mcp-api-for-elementor/v1` can work while MCP tools do not.
 6. Add the server to your client `mcp.json` (see below), then reload MCP servers in the client
+7. Call **`mcp-api-for-elementor-get-instructions` first** before page work — it returns the latest workflow, tool catalog, patterns, and gotchas for this plugin version (no local skill file required)
 
 MCP endpoint: `https://your-site.com/wp-json/mcp-api-for-elementor/mcp`
 
@@ -159,11 +161,7 @@ This plugin registers its own MCP Adapter server on that path (hook: `mcp_adapte
 
 ### Configure `mcp.json`
 
-MCP clients (Cursor, Claude Desktop, VS Code, etc.) read a JSON config that registers servers. Use the HTTP bridge for remote sites, or STDIO + WP-CLI for a local WordPress install.
-
-#### Remote site (HTTP) — recommended for hosted WordPress
-
-Uses [`@automattic/mcp-wordpress-remote`](https://www.npmjs.com/package/@automattic/mcp-wordpress-remote) to proxy MCP over the WordPress REST API:
+MCP clients (Cursor, Claude Desktop, VS Code, etc.) read a JSON config that registers servers. Use the HTTP bridge with [`@automattic/mcp-wordpress-remote`](https://www.npmjs.com/package/@automattic/mcp-wordpress-remote):
 
 ```json
 {
@@ -191,50 +189,7 @@ Replace:
 
 If Cursor shows a green status but **“No tools, prompts, or resources”**, the proxy likely cached a failed init (common right after installing MCP Adapter). Toggle the server off/on or reload MCP servers so it reconnects against the live `/mcp` route.
 
-#### Local site (STDIO + WP-CLI)
-
-When WordPress and WP-CLI are available on the same machine:
-
-```json
-{
-  "mcpServers": {
-    "mcp-api-for-elementor": {
-      "command": "wp",
-      "args": [
-        "--path=/path/to/your/wordpress/site",
-        "mcp-adapter",
-        "serve",
-        "--server=mcp-api-for-elementor",
-        "--user=admin"
-      ]
-    }
-  }
-}
-```
-
-## Agent Skill
-
-This repo includes a model-agnostic agent skill in `agent-skill/`. It teaches any AI coding agent (Claude Code, Cursor, GPT-based agents, etc.) how to use the API: workflows, element structures, widget settings, layout patterns, and design best practices.
-
-### Install the skill
-
-```bash
-cd /path/to/this/repo
-bash agent-skill/install.sh            # Claude Code + Cursor (default)
-bash agent-skill/install.sh claude     # ~/.claude/skills/mcp-api-for-elementor/
-bash agent-skill/install.sh cursor     # ~/.cursor/skills/mcp-api-for-elementor/
-bash agent-skill/install.sh uninstall  # remove from Claude Code + Cursor
-```
-
-Or copy `agent-skill/SKILL.md` into your agent's skills directory manually. Restart the agent — then say "build an Elementor page" and it knows how.
-
-### What the skill provides
-
-- Full API workflow (discover → explore → edit → flush → verify)
-- Elementor element JSON structure and common widget settings
-- Reusable section patterns (hero, content rows, icon grids, contact forms, photo collages)
-- Design best practices (zigzag layouts, background color alternation, responsive rules)
-- Critical gotchas (race conditions, CSS cache, flex layout math)
+---
 
 ## Important Notes
 
@@ -245,13 +200,6 @@ Or copy `agent-skill/SKILL.md` into your agent's skills directory manually. Rest
 - **Default page status**: `POST /page` and `POST /build-page` default to `draft`. Publishing requires `publish_pages`.
 - **Media import jail**: `POST /media/import` only accepts real image files under `wp-content/uploads/elementor-mcp-import/`.
 - **MCP tools**: Exposed on `/wp-json/mcp-api-for-elementor/mcp` (authenticated Application Password session; dedicated admin password recommended).
-
-## Publishing to WordPress.org
-
-1. Run the GitHub **Release** workflow (or build `mcp-api-for-elementor-{version}.zip` locally with the same file set: bootstrap PHP, `includes/`, `readme.txt`, `LICENSE`).
-2. Upload the zip at [Add your plugin](https://wordpress.org/plugins/developers/add/).
-3. Wait for manual review (often 1–10 days).
-4. After approval, commit the runtime files to WordPress.org SVN `trunk`, then copy to `tags/{version}` with matching `Stable tag` in `readme.txt`.
 
 ## License
 
