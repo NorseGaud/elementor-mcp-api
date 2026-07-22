@@ -178,6 +178,23 @@ jobs:
       - name: PHPUnit
         run: composer test
 
+      - name: Stage plugin package for Plugin Check
+        run: |
+          set -euo pipefail
+          SLUG="mcp-api-for-elementor"
+          DEST="${GITHUB_WORKSPACE}/.plugin-check-build/${SLUG}"
+          mkdir -p "${DEST}/includes"
+          cp mcp-api-for-elementor.php "${DEST}/"
+          cp includes/*.php "${DEST}/includes/"
+          cp includes/instructions-guidance.md "${DEST}/includes/"
+          cp readme.txt LICENSE "${DEST}/"
+
+      - name: Plugin Check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: ./.plugin-check-build/mcp-api-for-elementor
+          slug: mcp-api-for-elementor
+
       - name: Ensure tag does not already exist
         run: |
           set -euo pipefail

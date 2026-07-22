@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [edge]
   pull_request:
-    branches: [main]
+    branches: [edge]
   workflow_dispatch:
 
 permissions:
@@ -73,3 +73,30 @@ jobs:
 
       - name: PHPUnit
         run: composer test
+
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Same file set as the release zip — do not scan repo tooling/docs/tests.
+      - name: Stage plugin package
+        run: |
+          set -euo pipefail
+          SLUG="mcp-api-for-elementor"
+          DEST="${GITHUB_WORKSPACE}/.plugin-check-build/${SLUG}"
+          mkdir -p "${DEST}/includes"
+          cp mcp-api-for-elementor.php "${DEST}/"
+          cp includes/*.php "${DEST}/includes/"
+          cp includes/instructions-guidance.md "${DEST}/includes/"
+          cp readme.txt LICENSE "${DEST}/"
+          echo "Staged plugin at ${DEST}"
+          find "${DEST}" -type f | sort
+
+      - name: Run Plugin Check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          build-dir: ./.plugin-check-build/mcp-api-for-elementor
+          slug: mcp-api-for-elementor
