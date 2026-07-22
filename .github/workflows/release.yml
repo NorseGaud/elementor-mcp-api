@@ -2,13 +2,23 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Tag, zip, and publish
+    name: Bump, tag, zip, and publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,16 +33,21 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Resolve plugin version
+      - name: Bump plugin version
         id: version
+        env:
+          BUMP: ${{ inputs.bump }}
         run: |
           set -euo pipefail
           php <<'PHP'
           <?php
           $file = 'elementor-mcp-api.php';
+          $bump = getenv('BUMP') ?: 'patch';
+          if (!in_array($bump, ['patch', 'minor', 'major'], true)) {
+              fwrite(STDERR, "Invalid bump type: {$bump}\n");
+              exit(1);
+          }
+
           $contents = file_get_contents($file);
           if ($contents === false) {
               fwrite(STDERR, "Unable to read {$file}\n");
@@ -46,6 +61,7 @@ jobs:
               fwrite(STDERR, "Could not parse ELEMENTOR_MCP_API_VERSION from {$file}\n");
               exit(1);
           }
+
           $header_version = trim($header[1]);
           $const_version = trim($constant[1]);
           if ($header_version === '' || $const_version === '') {
@@ -56,20 +72,76 @@ jobs:
               fwrite(STDERR, "Version mismatch: header={$header_version} constant={$const_version}\n");
               exit(1);
           }
-          if (!preg_match('/^\d+\.\d+\.\d+/', $header_version)) {
+          if (!preg_match('/^(\d+)\.(\d+)\.(\d+)/', $header_version, $parts)) {
               fwrite(STDERR, "Unexpected version format: {$header_version}\n");
               exit(1);
           }
-          $tag = 'v' . $header_version;
+
+          $major = (int) $parts[1];
+          $minor = (int) $parts[2];
+          $patch = (int) $parts[3];
+          if ($bump === 'major') {
+              $major++;
+              $minor = 0;
+              $patch = 0;
+          } elseif ($bump === 'minor') {
+              $minor++;
+              $patch = 0;
+          } else {
+              $patch++;
+          }
+
+          $new_version = "{$major}.{$minor}.{$patch}";
+          $updated = preg_replace(
+              '/^(\s*\*\s*Version:\s*).+$/mi',
+              '${1}' . $new_version,
+              $contents,
+              1,
+              $header_count
+          );
+          if ($updated === null || $header_count !== 1) {
+              fwrite(STDERR, "Failed to update Version header\n");
+              exit(1);
+          }
+          $updated = preg_replace(
+              "/(define\(\s*'ELEMENTOR_MCP_API_VERSION'\s*,\s*')([^']+)('\s*\))/",
+              '${1}' . $new_version . '${3}',
+              $updated,
+              1,
+              $const_count
+          );
+          if ($updated === null || $const_count !== 1) {
+              fwrite(STDERR, "Failed to update ELEMENTOR_MCP_API_VERSION\n");
+              exit(1);
+          }
+          if (file_put_contents($file, $updated) === false) {
+              fwrite(STDERR, "Failed to write {$file}\n");
+              exit(1);
+          }
+
+          $tag = 'v' . $new_version;
           $output = getenv('GITHUB_OUTPUT');
           if ($output === false || $output === '') {
               fwrite(STDERR, "GITHUB_OUTPUT is not set\n");
               exit(1);
           }
-          file_put_contents($output, "version={$header_version}\n", FILE_APPEND);
+          file_put_contents($output, "previous={$header_version}\n", FILE_APPEND);
+          file_put_contents($output, "version={$new_version}\n", FILE_APPEND);
           file_put_contents($output, "tag={$tag}\n", FILE_APPEND);
-          echo "Resolved version {$header_version} (tag {$tag})\n";
+          echo "Bumped version {$header_version} -> {$new_version} ({$bump}) (tag {$tag})\n";
           PHP
+
+      - name: Commit version bump
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add elementor-mcp-api.php
+          git commit -m "Bump version to ${VERSION}"
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: PHP syntax check
         run: |
@@ -89,11 +161,11 @@ jobs:
           set -euo pipefail
           TAG="${{ steps.version.outputs.tag }}"
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-            echo "Tag ${TAG} already exists locally. Bump the version in elementor-mcp-api.php first."
+            echo "Tag ${TAG} already exists locally."
             exit 1
           fi
           if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
-            echo "Tag ${TAG} already exists on origin. Bump the version in elementor-mcp-api.php first."
+            echo "Tag ${TAG} already exists on origin."
             exit 1
           fi
 
@@ -117,14 +189,14 @@ jobs:
           echo "Built ${ZIP_NAME}"
           unzip -l "${ZIP_NAME}"
 
-      - name: Create and push tag
+      - name: Push version bump and tag
         run: |
           set -euo pipefail
           TAG="${{ steps.version.outputs.tag }}"
           VERSION="${{ steps.version.outputs.version }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          BRANCH="${{ github.ref_name }}"
           git tag -a "${TAG}" -m "Release ${VERSION}"
+          git push origin "HEAD:refs/heads/${BRANCH}"
           git push origin "${TAG}"
 
       - name: Create GitHub Release
