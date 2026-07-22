@@ -55,73 +55,158 @@ jobs:
           $bump = getenv('BUMP') ?: 'patch';
 
           if (!in_array($mode, ['bump', 'rerelease'], true)) {
-              fwrite(STDERR, "Invalid mode: {$mode}\n");
+              file_put_contents('php://stderr', "Invalid mode: {$mode}\n");
               exit(1);
           }
           if ($mode === 'bump' && !in_array($bump, ['patch', 'minor', 'major'], true)) {
-              fwrite(STDERR, "Invalid bump type: {$bump}\n");
+              file_put_contents('php://stderr', "Invalid bump type: {$bump}\n");
               exit(1);
           }
 
           $contents = file_get_contents($file);
           if ($contents === false) {
-              fwrite(STDERR, "Unable to read {$file}\n");
+              file_put_contents('php://stderr', "Unable to read {$file}\n");
               exit(1);
           }
           if (!preg_match('/^\s*\*\s*Version:\s*(.+)$/mi', $contents, $header)) {
-              fwrite(STDERR, "Could not parse Version header from {$file}\n");
+              file_put_contents('php://stderr', "Could not parse Version header from {$file}\n");
               exit(1);
           }
           if (!preg_match("/define\(\s*'MCP_API_FOR_ELEMENTOR_VERSION'\s*,\s*'([^']+)'\s*\)/", $contents, $constant)) {
-              fwrite(STDERR, "Could not parse MCP_API_FOR_ELEMENTOR_VERSION from {$file}\n");
+              file_put_contents('php://stderr', "Could not parse MCP_API_FOR_ELEMENTOR_VERSION from {$file}\n");
               exit(1);
           }
 
           $header_version = trim($header[1]);
           $const_version = trim($constant[1]);
           if ($header_version === '' || $const_version === '') {
-              fwrite(STDERR, "Empty version value in {$file}\n");
+              file_put_contents('php://stderr', "Empty version value in {$file}\n");
               exit(1);
           }
           if ($header_version !== $const_version) {
-              fwrite(STDERR, "Version mismatch: header={$header_version} constant={$const_version}\n");
+              file_put_contents('php://stderr', "Version mismatch: header={$header_version} constant={$const_version}\n");
               exit(1);
           }
           if (!preg_match('/^(\d+)\.(\d+)\.(\d+)/', $header_version, $parts)) {
-              fwrite(STDERR, "Unexpected version format: {$header_version}\n");
+              file_put_contents('php://stderr', "Unexpected version format: {$header_version}\n");
               exit(1);
           }
 
           $readme = 'readme.txt';
           $readme_contents = file_get_contents($readme);
           if ($readme_contents === false) {
-              fwrite(STDERR, "Unable to read {$readme}\n");
+              file_put_contents('php://stderr', "Unable to read {$readme}\n");
               exit(1);
           }
           if (!preg_match('/^== Changelog ==\s*$/m', $readme_contents)) {
-              fwrite(STDERR, "{$readme} is missing an == Changelog == section\n");
+              file_put_contents('php://stderr', "{$readme} is missing an == Changelog == section\n");
               exit(1);
           }
 
           $changed_files = false;
+          $readme_updated = $readme_contents;
+
+          // Resolve a git tag to generate Changelog bullets from (preferred tag, else latest v*).
+          $resolve_changelog_base_tag = static function (string $preferred_version, string $exclude_tag = '') : string {
+              $preferred_tag = 'v' . $preferred_version;
+              $tag_ref = trim((string) shell_exec('git rev-parse -q --verify ' . escapeshellarg('refs/tags/' . $preferred_tag) . ' 2>/dev/null'));
+              if ($tag_ref !== '' && $preferred_tag !== $exclude_tag) {
+                  return $preferred_tag;
+              }
+
+              $tags = preg_split("/\r\n|\n|\r/", trim((string) shell_exec("git tag -l 'v*' --sort=-v:refname"))) ?: [];
+              foreach ($tags as $tag) {
+                  $tag = trim($tag);
+                  if ($tag === '' || $tag === $exclude_tag) {
+                      continue;
+                  }
+                  if ($preferred_tag !== $exclude_tag && $tag_ref === '') {
+                      echo "Tag {$preferred_tag} not found; generating Changelog from {$tag}..HEAD\n";
+                  } elseif ($preferred_tag === $exclude_tag) {
+                      echo "Generating Changelog from {$tag}..HEAD\n";
+                  }
+                  return $tag;
+              }
+
+              return '';
+          };
+
+          // Insert "= {version} =" under == Changelog == from git history when missing.
+          $ensure_changelog_section = static function (
+              string $version,
+              string $base_tag,
+              string $readme_text
+          ) use (&$changed_files) : string {
+              $version_heading = '/^=\s*' . preg_quote($version, '/') . '\s*=\s*$/m';
+              if (preg_match($version_heading, $readme_text)) {
+                  echo "Changelog already has a section for {$version}\n";
+                  return $readme_text;
+              }
+              if ($base_tag === '') {
+                  file_put_contents('php://stderr', "No Changelog entry for {$version} and no git tags available to generate one.\n");
+                  exit(1);
+              }
+
+              $bullets = [];
+              $log_cmd = 'git log ' . escapeshellarg($base_tag) . '..HEAD --pretty=format:%s --no-merges 2>/dev/null';
+              $log_out = shell_exec($log_cmd);
+              if (is_string($log_out) && $log_out !== '') {
+                  foreach (preg_split("/\r\n|\n|\r/", trim($log_out)) as $subject) {
+                      $subject = trim($subject);
+                      if ($subject === '' || preg_match('/^Bump version to /i', $subject)) {
+                          continue;
+                      }
+                      $bullets[] = $subject;
+                  }
+              }
+              if ($bullets === []) {
+                  file_put_contents('php://stderr', "No Changelog entry for {$version} and no commits since {$base_tag} to generate one.\n");
+                  exit(1);
+              }
+
+              $section = "= {$version} =\n\n";
+              foreach ($bullets as $subject) {
+                  $section .= '* ' . $subject . "\n";
+              }
+              $section .= "\n";
+
+              $updated = preg_replace(
+                  '/^(== Changelog ==\s*\n)/m',
+                  '$1' . "\n" . $section,
+                  $readme_text,
+                  1,
+                  $changelog_count
+              );
+              if ($updated === null || $changelog_count !== 1) {
+                  file_put_contents('php://stderr', "Failed to insert Changelog section for {$version}\n");
+                  exit(1);
+              }
+
+              $changed_files = true;
+              echo "Inserted Changelog section for {$version} from git history since {$base_tag}\n";
+              return $updated;
+          };
 
           if ($mode === 'rerelease') {
               $new_version = $header_version;
               $previous_version = $header_version;
 
               if (!preg_match('/^Stable tag:\s*(.+)$/mi', $readme_contents, $stable)) {
-                  fwrite(STDERR, "Could not parse Stable tag from {$readme}\n");
+                  file_put_contents('php://stderr', "Could not parse Stable tag from {$readme}\n");
                   exit(1);
               }
               $stable_tag = trim($stable[1]);
               if ($stable_tag !== $new_version) {
-                  fwrite(STDERR, "rerelease requires Stable tag ({$stable_tag}) to match plugin version ({$new_version})\n");
+                  file_put_contents('php://stderr', "rerelease requires Stable tag ({$stable_tag}) to match plugin version ({$new_version})\n");
                   exit(1);
               }
 
-              $version_heading = '/^=\s*' . preg_quote($new_version, '/') . '\s*=\s*$/m';
-              if (!preg_match($version_heading, $readme_contents)) {
-                  fwrite(STDERR, "rerelease requires \"= {$new_version} =\" under == Changelog == in {$readme}\n");
+              // Prefer commits since the previous release tag (not v{current}).
+              $base_tag = $resolve_changelog_base_tag($previous_version, 'v' . $new_version);
+              $readme_updated = $ensure_changelog_section($new_version, $base_tag, $readme_updated);
+
+              if ($changed_files && file_put_contents($readme, $readme_updated) === false) {
+                  file_put_contents('php://stderr', "Failed to write {$readme}\n");
                   exit(1);
               }
 
@@ -153,7 +238,7 @@ jobs:
                   $header_count
               );
               if ($updated === null || $header_count !== 1) {
-                  fwrite(STDERR, "Failed to update Version header\n");
+                  file_put_contents('php://stderr', "Failed to update Version header\n");
                   exit(1);
               }
               $updated = preg_replace(
@@ -164,11 +249,11 @@ jobs:
                   $const_count
               );
               if ($updated === null || $const_count !== 1) {
-                  fwrite(STDERR, "Failed to update MCP_API_FOR_ELEMENTOR_VERSION\n");
+                  file_put_contents('php://stderr', "Failed to update MCP_API_FOR_ELEMENTOR_VERSION\n");
                   exit(1);
               }
               if (file_put_contents($file, $updated) === false) {
-                  fwrite(STDERR, "Failed to write {$file}\n");
+                  file_put_contents('php://stderr', "Failed to write {$file}\n");
                   exit(1);
               }
 
@@ -180,59 +265,15 @@ jobs:
                   $stable_count
               );
               if ($readme_updated === null || $stable_count !== 1) {
-                  fwrite(STDERR, "Failed to update Stable tag in {$readme}\n");
+                  file_put_contents('php://stderr', "Failed to update Stable tag in {$readme}\n");
                   exit(1);
               }
 
-              // Ensure Changelog has a = {new_version} = block (keep hand-written if present).
-              $version_heading = '/^=\s*' . preg_quote($new_version, '/') . '\s*=\s*$/m';
-              if (!preg_match($version_heading, $readme_updated)) {
-                  $bullets = [];
-                  $prev_tag = 'v' . $previous_version;
-                  $log_cmd = 'git log ' . escapeshellarg($prev_tag) . '..HEAD --pretty=format:%s --no-merges 2>/dev/null';
-                  $log_out = shell_exec($log_cmd);
-                  if (is_string($log_out) && $log_out !== '') {
-                      foreach (preg_split("/\r\n|\n|\r/", trim($log_out)) as $subject) {
-                          $subject = trim($subject);
-                          if ($subject === '') {
-                              continue;
-                          }
-                          if (preg_match('/^Bump version to /i', $subject)) {
-                              continue;
-                          }
-                          $bullets[] = $subject;
-                      }
-                  }
-                  if ($bullets === []) {
-                      fwrite(STDERR, "No Changelog entry for {$new_version} and no commits since {$prev_tag} to generate one.\n");
-                      fwrite(STDERR, "Add \"= {$new_version} =\" under == Changelog == in {$readme} before releasing, or ensure there are commits since the previous tag.\n");
-                      exit(1);
-                  }
-
-                  $section = "= {$new_version} =\n\n";
-                  foreach ($bullets as $subject) {
-                      $section .= '* ' . $subject . "\n";
-                  }
-                  $section .= "\n";
-
-                  $readme_updated = preg_replace(
-                      '/^(== Changelog ==\s*\n)/m',
-                      '$1' . "\n" . $section,
-                      $readme_updated,
-                      1,
-                      $changelog_count
-                  );
-                  if ($readme_updated === null || $changelog_count !== 1) {
-                      fwrite(STDERR, "Failed to insert Changelog section for {$new_version}\n");
-                      exit(1);
-                  }
-                  echo "Inserted Changelog section for {$new_version} from git history since {$prev_tag}\n";
-              } else {
-                  echo "Changelog already has a section for {$new_version}\n";
-              }
+              $base_tag = $resolve_changelog_base_tag($previous_version);
+              $readme_updated = $ensure_changelog_section($new_version, $base_tag, $readme_updated);
 
               if (file_put_contents($readme, $readme_updated) === false) {
-                  fwrite(STDERR, "Failed to write {$readme}\n");
+                  file_put_contents('php://stderr', "Failed to write {$readme}\n");
                   exit(1);
               }
 
@@ -242,7 +283,7 @@ jobs:
           $tag = 'v' . $new_version;
           $output = getenv('GITHUB_OUTPUT');
           if ($output === false || $output === '') {
-              fwrite(STDERR, "GITHUB_OUTPUT is not set\n");
+              file_put_contents('php://stderr', "GITHUB_OUTPUT is not set\n");
               exit(1);
           }
           file_put_contents($output, "mode={$mode}\n", FILE_APPEND);
@@ -258,10 +299,15 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
+          MODE="${{ steps.version.outputs.mode }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add mcp-api-for-elementor.php readme.txt
-          git commit -m "Bump version to ${VERSION}"
+          if [[ "${MODE}" == "rerelease" ]]; then
+            git commit -m "Add Changelog for ${VERSION}"
+          else
+            git commit -m "Bump version to ${VERSION}"
+          fi
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -366,11 +412,13 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           BRANCH="${{ github.ref_name }}"
           MODE="${{ steps.version.outputs.mode }}"
+          CHANGED="${{ steps.version.outputs.changed }}"
           # Annotated tags need an identity even when rerelease skips the bump commit.
           git config user.name "NorseGaud"
           git config user.email "norsegaud@gmail.com"
           git tag -a "${TAG}" -m "Release ${VERSION}"
-          if [[ "${MODE}" == "bump" ]]; then
+          # Push branch for version bumps, and for rerelease when Changelog was generated.
+          if [[ "${MODE}" == "bump" || "${CHANGED}" == "true" ]]; then
             git push origin "HEAD:refs/heads/${BRANCH}"
           fi
           git push origin "${TAG}"
