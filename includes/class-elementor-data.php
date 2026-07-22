@@ -291,6 +291,88 @@ class Elementor_Data {
         return $post_id;
     }
 
+    // ── Page document settings (Body Style, etc.) ────────────
+
+    /**
+     * Get Elementor page/document settings (_elementor_page_settings).
+     *
+     * These are Page Settings (Style → Body Style, etc.), not widget settings
+     * and not the global kit.
+     */
+    public static function get_page_settings(int $post_id): array {
+        if (!get_post($post_id)) {
+            return [];
+        }
+        $settings = get_post_meta($post_id, '_elementor_page_settings', true);
+        return is_array($settings) ? $settings : [];
+    }
+
+    /**
+     * Update Elementor page/document settings (merge + optional key removal).
+     *
+     * Nested associative arrays (e.g. `__globals__`) are deep-merged.
+     * Use `$unset` to remove keys (e.g. leftover `background_gradient_type`).
+     * Flushes CSS for the post on success.
+     *
+     * @param array<string, mixed> $settings Settings to merge.
+     * @param list<string>         $unset    Setting keys to remove after merge.
+     * @return array<string, mixed>|\WP_Error Merged settings, or error.
+     */
+    public static function update_page_settings(int $post_id, array $settings = [], array $unset = []) {
+        if (!get_post($post_id)) {
+            return new \WP_Error('not_found', 'Page not found.');
+        }
+
+        $current = self::get_page_settings($post_id);
+        $merged  = self::merge_assoc_settings($current, $settings);
+
+        foreach ($unset as $key) {
+            if (!is_string($key) || $key === '') {
+                continue;
+            }
+            unset($merged[$key]);
+        }
+
+        update_post_meta($post_id, '_elementor_page_settings', $merged);
+        self::flush_css($post_id);
+
+        return $merged;
+    }
+
+    /**
+     * Deep-merge associative setting arrays; replace lists/scalars.
+     *
+     * @param array<string, mixed> $current
+     * @param array<string, mixed> $incoming
+     * @return array<string, mixed>
+     */
+    public static function merge_assoc_settings(array $current, array $incoming): array {
+        foreach ($incoming as $key => $value) {
+            if (
+                is_array($value)
+                && isset($current[$key])
+                && is_array($current[$key])
+                && self::is_associative_array($value)
+                && self::is_associative_array($current[$key])
+            ) {
+                $current[$key] = self::merge_assoc_settings($current[$key], $value);
+                continue;
+            }
+            $current[$key] = $value;
+        }
+        return $current;
+    }
+
+    /**
+     * @param array<mixed> $value
+     */
+    private static function is_associative_array(array $value): bool {
+        if ($value === []) {
+            return true;
+        }
+        return array_keys($value) !== range(0, count($value) - 1);
+    }
+
     // ── Kit / Global Settings ────────────────────────────────
 
     /**

@@ -51,4 +51,51 @@ class SmokeTest extends TestCase {
 
         $this->assertSame($header_version, MCP_API_FOR_ELEMENTOR_VERSION);
     }
+
+    public function test_page_settings_abilities_are_listed() {
+        require_once dirname(__DIR__) . '/includes/class-abilities-provider.php';
+        $names = McpApiForElementor\Abilities_Provider::get_tool_ability_names();
+        $this->assertContains('mcp-api-for-elementor/get-page-settings', $names);
+        $this->assertContains('mcp-api-for-elementor/update-page-settings', $names);
+        $this->assertCount(24, $names);
+    }
+
+    public function test_merge_assoc_settings_deep_merges_globals() {
+        $current = [
+            'background_background' => 'classic',
+            'background_color' => '#FFFFFF',
+            '__globals__' => [
+                'background_color' => '',
+                'keep_me' => 'yes',
+            ],
+        ];
+        $incoming = [
+            'background_background' => 'gradient',
+            'background_color' => '#75091E0D',
+            '__globals__' => [
+                'background_color_b' => 'globals/colors?id=176f4bf',
+            ],
+        ];
+        $merged = McpApiForElementor\Elementor_Data::merge_assoc_settings($current, $incoming);
+        $this->assertSame('gradient', $merged['background_background']);
+        $this->assertSame('#75091E0D', $merged['background_color']);
+        $this->assertSame('', $merged['__globals__']['background_color']);
+        $this->assertSame('yes', $merged['__globals__']['keep_me']);
+        $this->assertSame(
+            'globals/colors?id=176f4bf',
+            $merged['__globals__']['background_color_b']
+        );
+    }
+
+    public function test_instructions_mention_page_settings_tools() {
+        $result = McpApiForElementor\Instructions_Composer::build();
+        $this->assertStringContainsString(
+            'mcp-api-for-elementor-get-page-settings',
+            $result['markdown']
+        );
+        $this->assertStringContainsString(
+            'mcp-api-for-elementor-update-page-settings',
+            $result['markdown']
+        );
+    }
 }

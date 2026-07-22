@@ -18,10 +18,12 @@
 - `mcp-api-for-elementor-generate-element` — well-formed element JSON via Element Factory
 - `mcp-api-for-elementor-create-page` / `build-page` — new or full-page builds
 - `mcp-api-for-elementor-update-page-meta` — title, slug, status, Yoast (not layout)
+- `mcp-api-for-elementor-get-page-settings` / `update-page-settings` — Page Settings / Body Style (`_elementor_page_settings`), not widgets and not the global kit
 - Prefer `generate-element` before `add-element` when constructing new widgets
 
 ### 4. Flush CSS (required after visual changes)
 Call `mcp-api-for-elementor-flush-css` (optional `post_id`). Requires `manage_options`.
+`update-page-settings` already flushes CSS for that post.
 
 ### 5. Verify visually (mandatory)
 1. Flush CSS

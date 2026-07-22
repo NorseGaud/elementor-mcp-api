@@ -45,6 +45,18 @@ class REST_Controller {
             ...$editor,
         ]);
 
+        register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/settings', [
+            'methods'  => 'GET',
+            'callback' => [$this, 'get_page_settings'],
+            ...$reader,
+        ]);
+
+        register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/settings', [
+            'methods'  => 'PATCH',
+            'callback' => [$this, 'update_page_settings'],
+            ...$editor,
+        ]);
+
         register_rest_route(self::NAMESPACE, '/page', [
             'methods'  => 'POST',
             'callback' => [$this, 'create_page'],
@@ -331,6 +343,61 @@ class REST_Controller {
         }
 
         return new \WP_REST_Response($result, 200);
+    }
+
+    public function get_page_settings(\WP_REST_Request $request): \WP_REST_Response {
+        $id = (int) $request['id'];
+
+        if ($denied = $this->require_edit_page($id)) {
+            return $denied;
+        }
+
+        if (!get_post($id)) {
+            return new \WP_REST_Response(['error' => 'Page not found'], 404);
+        }
+
+        return new \WP_REST_Response([
+            'post_id'  => $id,
+            'settings' => Elementor_Data::get_page_settings($id),
+        ], 200);
+    }
+
+    public function update_page_settings(\WP_REST_Request $request): \WP_REST_Response {
+        $id   = (int) $request['id'];
+        $body = $request->get_json_params() ?: [];
+
+        if ($denied = $this->require_edit_page($id)) {
+            return $denied;
+        }
+
+        $settings = $body['settings'] ?? null;
+        if ($settings !== null && !is_array($settings)) {
+            return new \WP_REST_Response(['error' => 'Invalid "settings" object'], 400);
+        }
+        $unset = $body['unset'] ?? [];
+        if (!is_array($unset)) {
+            return new \WP_REST_Response(['error' => 'Invalid "unset" array'], 400);
+        }
+        if ($settings === null && $unset === []) {
+            return new \WP_REST_Response(['error' => 'Provide "settings" and/or "unset"'], 400);
+        }
+
+        $result = Elementor_Data::update_page_settings(
+            $id,
+            is_array($settings) ? $settings : [],
+            $unset
+        );
+        if (is_wp_error($result)) {
+            return new \WP_REST_Response([
+                'error' => $result->get_error_message(),
+                'code'  => $result->get_error_code(),
+            ], 404);
+        }
+
+        return new \WP_REST_Response([
+            'post_id'  => $id,
+            'settings' => $result,
+        ], 200);
     }
 
     public function create_page(\WP_REST_Request $request): \WP_REST_Response {

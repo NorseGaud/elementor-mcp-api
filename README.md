@@ -16,7 +16,7 @@ Official WordPress Marketplace Listing: [https://wordpress.org/plugins/mcp-api-f
 - **Element operations** — add, remove, duplicate, move elements in the page tree
 - **Global kit management** — read/write colors, fonts, and site-wide settings
 - **Widget discovery** — list all available widgets and get their control schemas
-- **MCP protocol support** — auto-registers 22 abilities via the core [Abilities API](https://developer.wordpress.org/apis/abilities-api/) when [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active, including `get-instructions` for always-current agent guidance
+- **MCP protocol support** — auto-registers 24 abilities via the core [Abilities API](https://developer.wordpress.org/apis/abilities-api/) when [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) is active, including `get-instructions` for always-current agent guidance
 - **CSS cache management** — flush Elementor CSS after changes
 
 ## Requirements
@@ -43,6 +43,8 @@ MCP tools use the names below exactly as shown in the client (ability `mcp-api-f
 | GET | `/page/{id}` | `mcp-api-for-elementor-get-page-data` | Full Elementor element tree |
 | PUT | `/page/{id}` | `mcp-api-for-elementor-save-page-data` | Replace the full element tree |
 | PATCH | `/page/{id}/meta` | `mcp-api-for-elementor-update-page-meta` | Update title, slug, excerpt, status, Yoast SEO |
+| GET | `/page/{id}/settings` | `mcp-api-for-elementor-get-page-settings` | Get Elementor page/document settings (Body Style) |
+| PATCH | `/page/{id}/settings` | `mcp-api-for-elementor-update-page-settings` | Merge page settings; optional `unset` keys; flushes post CSS |
 | POST | `/page` | `mcp-api-for-elementor-create-page` | Create a page with optional Elementor content |
 | POST | `/build-page` | `mcp-api-for-elementor-build-page` | Create or update a full page (optional image import) |
 
@@ -115,7 +117,7 @@ This plugin can expose its capabilities via the Model Context Protocol for direc
 1. Use **WordPress 6.9+** — the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) ships in core ([standalone plugin archived](https://github.com/WordPress/abilities-api/issues/160); no separate Abilities install needed)
 2. Install and activate the official [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin  
    Download the latest `mcp-adapter.zip` from [Releases](https://github.com/WordPress/mcp-adapter/releases) → Plugins → Add New → Upload Plugin → Activate
-3. Activate this plugin — it auto-registers 22 abilities and a dedicated MCP server (no extra WordPress config)
+3. Activate this plugin — it auto-registers 24 abilities and a dedicated MCP server (no extra WordPress config)
 4. Create an Application Password for a user with the capabilities you need (admin recommended)
 5. Verify the MCP route exists (must not 404):
 

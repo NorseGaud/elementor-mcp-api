@@ -83,6 +83,8 @@ class Abilities_Provider {
             'mcp-api-for-elementor/save-page-data',
             'mcp-api-for-elementor/create-page',
             'mcp-api-for-elementor/update-page-meta',
+            'mcp-api-for-elementor/get-page-settings',
+            'mcp-api-for-elementor/update-page-settings',
             'mcp-api-for-elementor/get-element',
             'mcp-api-for-elementor/move-element',
             'mcp-api-for-elementor/update-element',
@@ -264,6 +266,110 @@ class Abilities_Provider {
                     return $allowed;
                 }
                 return Elementor_Data::update_page_meta($post_id, $input);
+            },
+            'permission_callback' => [self::class, 'can_edit'],
+            'meta' => self::meta_write(),
+        ]);
+
+        wp_register_ability('mcp-api-for-elementor/get-page-settings', [
+            'label'       => 'Get Page Settings',
+            'description' => 'Get Elementor page/document settings (_elementor_page_settings), including Page Settings → Style → Body Style (background, etc.). Not widget settings and not the global kit.',
+            'category'    => 'mcp-api-for-elementor',
+            'input_schema' => [
+                'type'       => 'object',
+                'required'   => ['post_id'],
+                'properties' => [
+                    'post_id' => [
+                        'type'        => 'integer',
+                        'description' => 'The WordPress page/post ID.',
+                    ],
+                ],
+                'additionalProperties' => false,
+            ],
+            'output_schema' => [
+                'type'       => 'object',
+                'properties' => [
+                    'post_id'  => ['type' => 'integer'],
+                    'settings' => ['type' => 'object'],
+                ],
+            ],
+            'execute_callback' => function ($input) {
+                $post_id = (int) $input['post_id'];
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) {
+                    return $allowed;
+                }
+                if (!get_post($post_id)) {
+                    return new \WP_Error('not_found', 'Page not found.');
+                }
+                return [
+                    'post_id'  => $post_id,
+                    'settings' => Elementor_Data::get_page_settings($post_id),
+                ];
+            },
+            'permission_callback' => [self::class, 'can_edit'],
+            'meta' => self::meta_read(),
+        ]);
+
+        wp_register_ability('mcp-api-for-elementor/update-page-settings', [
+            'label'       => 'Update Page Settings',
+            'description' => 'Update Elementor page/document settings (Body Style background, etc.). Merges with existing settings; nested maps like __globals__ are deep-merged. Optional unset removes keys. Flushes CSS for the post.',
+            'category'    => 'mcp-api-for-elementor',
+            'input_schema' => [
+                'type'       => 'object',
+                'required'   => ['post_id'],
+                'properties' => [
+                    'post_id' => [
+                        'type'        => 'integer',
+                        'description' => 'The WordPress page/post ID.',
+                    ],
+                    'settings' => [
+                        'type'        => 'object',
+                        'description' => 'Page settings to merge. Common Body Style keys: background_background, background_color, background_color_b, background_gradient_angle, __globals__.',
+                    ],
+                    'unset' => [
+                        'type'        => 'array',
+                        'description' => 'Setting keys to remove after merge (e.g. ["background_gradient_type"]).',
+                        'items'       => ['type' => 'string'],
+                    ],
+                ],
+                'additionalProperties' => false,
+            ],
+            'output_schema' => [
+                'type'       => 'object',
+                'properties' => [
+                    'post_id'  => ['type' => 'integer'],
+                    'settings' => ['type' => 'object'],
+                ],
+            ],
+            'execute_callback' => function ($input) {
+                $post_id = (int) $input['post_id'];
+                $allowed = self::require_edit_page($post_id);
+                if (is_wp_error($allowed)) {
+                    return $allowed;
+                }
+
+                $settings = $input['settings'] ?? [];
+                $unset    = $input['unset'] ?? [];
+                if (!is_array($settings)) {
+                    return new \WP_Error('invalid_settings', 'Invalid "settings" object.');
+                }
+                if (!is_array($unset)) {
+                    return new \WP_Error('invalid_unset', 'Invalid "unset" array.');
+                }
+                if ($settings === [] && $unset === []) {
+                    return new \WP_Error('empty_update', 'Provide "settings" and/or "unset".');
+                }
+
+                $result = Elementor_Data::update_page_settings($post_id, $settings, $unset);
+                if (is_wp_error($result)) {
+                    return $result;
+                }
+
+                return [
+                    'post_id'  => $post_id,
+                    'settings' => $result,
+                ];
             },
             'permission_callback' => [self::class, 'can_edit'],
             'meta' => self::meta_write(),
