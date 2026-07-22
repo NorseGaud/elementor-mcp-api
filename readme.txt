@@ -83,7 +83,4 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 == Upgrade Notice ==
 
 = 3.0.0 =
-* Requires WordPress 6.9 or later.
-* Requires PHP 8.0+. Media import jail path is now `uploads/mcp-api-for-elementor-import/` (legacy path still works).
-* New MCP tool `get-instructions` replaces the local agent skill. Call it before Elementor page work.
-* Breaking rename: update REST/MCP URLs and tool names from `elementor-mcp-api` to `mcp-api-for-elementor`.
+Requires WordPress 6.9+ and PHP 8.0+. Breaking rename from elementor-mcp-api to mcp-api-for-elementor. Call get-instructions for agent guidance. Media import jail is uploads/mcp-api-for-elementor-import/.

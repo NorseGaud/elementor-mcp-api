@@ -414,14 +414,19 @@ class Elementor_Data {
 
         $title = $title ?: pathinfo($filename, PATHINFO_FILENAME);
 
-        // Check if already imported
-        global $wpdb;
-        $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT ID FROM {$wpdb->posts} WHERE post_type='attachment' AND post_title=%s LIMIT 1",
-            $title
-        ));
-        if ($existing) {
-            return (int) $existing;
+        // Check if already imported (WP_Query avoids direct $wpdb calls).
+        $existing_query = new \WP_Query([
+            'post_type'              => 'attachment',
+            'post_status'            => 'inherit',
+            'posts_per_page'         => 1,
+            'fields'                 => 'ids',
+            'title'                  => $title,
+            'no_found_rows'          => true,
+            'update_post_meta_cache' => false,
+            'update_post_term_cache' => false,
+        ]);
+        if (!empty($existing_query->posts[0])) {
+            return (int) $existing_query->posts[0];
         }
 
         $upload_dir = wp_upload_dir();

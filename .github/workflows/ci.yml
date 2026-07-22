@@ -100,3 +100,4 @@ jobs:
         with:
           build-dir: ./.plugin-check-build/mcp-api-for-elementor
           slug: mcp-api-for-elementor
+          strict: "true"

@@ -295,6 +295,7 @@ jobs:
         with:
           build-dir: ./.plugin-check-build/mcp-api-for-elementor
           slug: mcp-api-for-elementor
+          strict: "true"
 
       - name: Delete existing GitHub release and tag
         if: steps.version.outputs.mode == 'rerelease'
