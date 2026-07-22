@@ -15,4 +15,8 @@ wp-config.php
 /vendor/
 
 .cursor
-docs
+
+# Local notes under docs/ stay untracked; ship design specs/plans in git.
+docs/*
+!docs/superpowers/
+!docs/superpowers/**
