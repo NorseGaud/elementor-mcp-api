@@ -1,5 +1,5 @@
 <?php
-namespace ElementorMcpApi;
+namespace McpApiForElementor;
 
 /**
  * REST API Controller - exposes all Elementor operations as REST endpoints.
@@ -7,7 +7,7 @@ namespace ElementorMcpApi;
  */
 class REST_Controller {
 
-    const NAMESPACE = 'elementor-mcp-api/v1';
+    const NAMESPACE = 'mcp-api-for-elementor/v1';
 
     public function register_routes(): void {
         $editor  = ['permission_callback' => [$this, 'check_edit_permission']];

@@ -1,16 +1,16 @@
 <?php
-namespace ElementorMcpApi;
+namespace McpApiForElementor;
 
 /**
  * Registers a dedicated MCP Adapter server for this plugin.
  *
- * Endpoint: /wp-json/elementor-mcp-api/mcp
- * Server ID (STDIO): elementor-mcp-api
+ * Endpoint: /wp-json/mcp-api-for-elementor/mcp
+ * Server ID (STDIO): mcp-api-for-elementor
  */
 class Mcp_Server {
 
-    const SERVER_ID = 'elementor-mcp-api';
-    const ROUTE_NAMESPACE = 'elementor-mcp-api';
+    const SERVER_ID = 'mcp-api-for-elementor';
+    const ROUTE_NAMESPACE = 'mcp-api-for-elementor';
     const ROUTE = 'mcp';
 
     /**
@@ -28,7 +28,7 @@ class Mcp_Server {
         }
 
         if (!class_exists(Abilities_Provider::class)) {
-            require_once ELEMENTOR_MCP_API_PATH . 'includes/class-abilities-provider.php';
+            require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-abilities-provider.php';
         }
 
         $error_handler = class_exists(\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler::class)
@@ -43,9 +43,9 @@ class Mcp_Server {
             self::SERVER_ID,
             self::ROUTE_NAMESPACE,
             self::ROUTE,
-            'Elementor MCP API',
+            'MCP API for Elementor',
             'AI-driven Elementor page building tools.',
-            'v' . ELEMENTOR_MCP_API_VERSION,
+            'v' . MCP_API_FOR_ELEMENTOR_VERSION,
             [\WP\MCP\Transport\HttpTransport::class],
             $error_handler,
             $observability,
@@ -56,7 +56,7 @@ class Mcp_Server {
 
         if (is_wp_error($result) && defined('WP_DEBUG') && WP_DEBUG) {
             // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            error_log('Elementor MCP API: failed to create MCP server — ' . $result->get_error_message());
+            error_log('MCP API for Elementor: failed to create MCP server — ' . $result->get_error_message());
         }
     }
 }

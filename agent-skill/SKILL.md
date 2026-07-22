@@ -1,7 +1,7 @@
 ---
 name: elementor-builder
 description: |
-  Universal AI-driven Elementor page building via Elementor MCP API.
+  Universal AI-driven Elementor page building via MCP API for Elementor.
   Use when the user:
   - Wants to create, edit, or modify Elementor pages on any WordPress site
   - Wants to update page sections, widgets, or styles
@@ -11,15 +11,15 @@ description: |
   - Wants to create headers, footers, or templates
 ---
 
-# Elementor Builder - Elementor MCP API Skill
+# Elementor Builder - MCP API for Elementor Skill
 
-Universal skill for AI-driven Elementor page editing on any WordPress site running the Elementor MCP API plugin.
+Universal skill for AI-driven Elementor page editing on any WordPress site running the MCP API for Elementor plugin.
 
 ## Setup
 
 Before using the API, determine the site's connection info. Check project docs (`AGENTS.md`, `CLAUDE.md`, README) or agent memory for credentials. Set variables:
 ```bash
-API="https://{site}/wp-json/elementor-mcp-api/v1"
+API="https://{site}/wp-json/mcp-api-for-elementor/v1"
 AUTH="{user}:{application_password}"
 ```
 

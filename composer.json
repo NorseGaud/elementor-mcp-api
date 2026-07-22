@@ -1,5 +1,5 @@
 {
-    "name": "norsegaud/elementor-mcp-api",
+    "name": "norsegaud/mcp-api-for-elementor",
     "description": "REST API + MCP tools for AI-driven Elementor page building",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-only",

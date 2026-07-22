@@ -31,7 +31,7 @@ except ImportError:
     sys.exit(1)
 
 LOCAL_ROOT = os.path.dirname(os.path.abspath(__file__))
-PLUGIN_SLUG = "elementor-mcp-api"
+PLUGIN_SLUG = "mcp-api-for-elementor"
 DEFAULT_WORKERS = 8
 # Dev/docs/tooling only — not required for the plugin to run in WordPress.
 SKIP_NAMES = {
@@ -44,7 +44,6 @@ SKIP_NAMES = {
     "upload-sftp.py",
     "README.md",
     "AGENTS.md",
-    "LICENSE",
     "agent-skill",
     "docs",
     "tests",

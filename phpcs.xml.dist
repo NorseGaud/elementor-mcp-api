@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<ruleset name="Elementor MCP API">
-    <description>Coding standards for Elementor MCP API</description>
+<ruleset name="MCP API for Elementor">
+    <description>Coding standards for MCP API for Elementor</description>
 
-    <file>elementor-mcp-api.php</file>
+    <file>mcp-api-for-elementor.php</file>
     <file>includes</file>
 
     <exclude-pattern>*/vendor/*</exclude-pattern>

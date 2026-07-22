@@ -1,5 +1,5 @@
 <?php
-namespace ElementorMcpApi;
+namespace McpApiForElementor;
 
 /**
  * Element Factory - creates properly structured Elementor JSON elements.

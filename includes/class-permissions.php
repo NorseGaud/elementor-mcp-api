@@ -1,5 +1,5 @@
 <?php
-namespace ElementorMcpApi;
+namespace McpApiForElementor;
 
 /**
  * Centralized capability checks for REST + MCP abilities.

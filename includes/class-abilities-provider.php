@@ -1,8 +1,8 @@
 <?php
-namespace ElementorMcpApi;
+namespace McpApiForElementor;
 
 /**
- * Registers Elementor MCP API abilities for the WordPress Abilities API + MCP Adapter.
+ * Registers MCP API for Elementor abilities for the WordPress Abilities API + MCP Adapter.
  * Each ability is exposed as an MCP tool via the default MCP server.
  */
 class Abilities_Provider {
@@ -63,8 +63,8 @@ class Abilities_Provider {
      * Register the ability category and all abilities.
      */
     public static function register_category(): void {
-        wp_register_ability_category('elementor-mcp-api', [
-            'label'       => 'Elementor MCP API',
+        wp_register_ability_category('mcp-api-for-elementor', [
+            'label'       => 'MCP API for Elementor',
             'description' => 'AI-driven Elementor page building tools for creating, reading, and modifying Elementor pages, elements, templates, and global settings.',
         ]);
     }
@@ -76,32 +76,32 @@ class Abilities_Provider {
      */
     public static function get_tool_ability_names(): array {
         return [
-            'elementor-mcp-api/list-pages',
-            'elementor-mcp-api/get-page-structure',
-            'elementor-mcp-api/get-page-data',
-            'elementor-mcp-api/save-page-data',
-            'elementor-mcp-api/create-page',
-            'elementor-mcp-api/update-page-meta',
-            'elementor-mcp-api/get-element',
-            'elementor-mcp-api/move-element',
-            'elementor-mcp-api/update-element',
-            'elementor-mcp-api/add-element',
-            'elementor-mcp-api/remove-element',
-            'elementor-mcp-api/duplicate-element',
-            'elementor-mcp-api/generate-element',
-            'elementor-mcp-api/list-templates',
-            'elementor-mcp-api/create-template',
-            'elementor-mcp-api/get-kit',
-            'elementor-mcp-api/update-kit',
-            'elementor-mcp-api/list-widgets',
-            'elementor-mcp-api/get-widget-schema',
-            'elementor-mcp-api/flush-css',
-            'elementor-mcp-api/build-page',
+            'mcp-api-for-elementor/list-pages',
+            'mcp-api-for-elementor/get-page-structure',
+            'mcp-api-for-elementor/get-page-data',
+            'mcp-api-for-elementor/save-page-data',
+            'mcp-api-for-elementor/create-page',
+            'mcp-api-for-elementor/update-page-meta',
+            'mcp-api-for-elementor/get-element',
+            'mcp-api-for-elementor/move-element',
+            'mcp-api-for-elementor/update-element',
+            'mcp-api-for-elementor/add-element',
+            'mcp-api-for-elementor/remove-element',
+            'mcp-api-for-elementor/duplicate-element',
+            'mcp-api-for-elementor/generate-element',
+            'mcp-api-for-elementor/list-templates',
+            'mcp-api-for-elementor/create-template',
+            'mcp-api-for-elementor/get-kit',
+            'mcp-api-for-elementor/update-kit',
+            'mcp-api-for-elementor/list-widgets',
+            'mcp-api-for-elementor/get-widget-schema',
+            'mcp-api-for-elementor/flush-css',
+            'mcp-api-for-elementor/build-page',
         ];
     }
 
     /**
-     * Register all Elementor MCP API abilities.
+     * Register all MCP API for Elementor abilities.
      */
     public static function register(): void {
         self::register_page_abilities();
@@ -116,10 +116,10 @@ class Abilities_Provider {
 
     private static function register_page_abilities(): void {
 
-        wp_register_ability('elementor-mcp-api/list-pages', [
+        wp_register_ability('mcp-api-for-elementor/list-pages', [
             'label'       => 'List Pages',
             'description' => 'List all WordPress pages with their Elementor status. Returns page ID, title, slug, status, URL, and whether the page uses Elementor.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'output_schema' => [
                 'type'  => 'array',
                 'items' => [
@@ -159,10 +159,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/update-page-meta', [
+        wp_register_ability('mcp-api-for-elementor/update-page-meta', [
             'label'       => 'Update Page Meta',
             'description' => 'Update WordPress page title, slug, excerpt, status, and Yoast SEO metadata (focus_keyphrase, seo_title, meta_description, Open Graph, Twitter). Does not modify Elementor layout data.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id'],
@@ -234,10 +234,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/get-page-structure', [
+        wp_register_ability('mcp-api-for-elementor/get-page-structure', [
             'label'       => 'Get Page Structure',
             'description' => 'Get a compact summary of an Elementor page structure showing element IDs, types, widget types, and key settings hints. Use this to understand the page layout before making changes.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id'],
@@ -277,10 +277,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/get-page-data', [
+        wp_register_ability('mcp-api-for-elementor/get-page-data', [
             'label'       => 'Get Page Data',
             'description' => 'Get the full Elementor element tree (JSON) for a page. Returns the complete data structure including all settings. Use get-page-structure for a lighter overview.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id'],
@@ -320,10 +320,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/save-page-data', [
+        wp_register_ability('mcp-api-for-elementor/save-page-data', [
             'label'       => 'Save Page Data',
             'description' => 'Save the full Elementor element tree for a page. Replaces all existing page content. Use update-element for granular changes.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'data'],
@@ -359,10 +359,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/create-page', [
+        wp_register_ability('mcp-api-for-elementor/create-page', [
             'label'       => 'Create Page',
             'description' => 'Create a new WordPress page with optional Elementor content. Returns the new page ID and URL.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['title'],
@@ -422,10 +422,10 @@ class Abilities_Provider {
 
     private static function register_element_abilities(): void {
 
-        wp_register_ability('elementor-mcp-api/get-element', [
+        wp_register_ability('mcp-api-for-elementor/get-element', [
             'label'       => 'Get Element',
             'description' => 'Get the full data (settings, children) of a single Elementor element by ID. Avoids fetching the entire page when you only need one element.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -462,10 +462,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/move-element', [
+        wp_register_ability('mcp-api-for-elementor/move-element', [
             'label'       => 'Move Element',
             'description' => 'Move an Elementor element to a new position within the page. Can move to root level or inside a specific parent container. The element is removed from its current location and inserted at the new position.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -530,10 +530,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/update-element', [
+        wp_register_ability('mcp-api-for-elementor/update-element', [
             'label'       => 'Update Element Settings',
             'description' => 'Update the settings of a specific Elementor element by its ID. Merges new settings with existing ones. Use get-page-structure first to find element IDs.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id', 'settings'],
@@ -578,10 +578,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/add-element', [
+        wp_register_ability('mcp-api-for-elementor/add-element', [
             'label'       => 'Add Element',
             'description' => 'Add a new Elementor element (container or widget) to a page. Can be added to the root level or inside a specific parent container. Use Element Factory format for the element structure.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element'],
@@ -641,10 +641,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/remove-element', [
+        wp_register_ability('mcp-api-for-elementor/remove-element', [
             'label'       => 'Remove Element',
             'description' => 'Remove an Elementor element by its ID from a page. Also removes all children.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -684,10 +684,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(true),
         ]);
 
-        wp_register_ability('elementor-mcp-api/duplicate-element', [
+        wp_register_ability('mcp-api-for-elementor/duplicate-element', [
             'label'       => 'Duplicate Element',
             'description' => 'Duplicate an Elementor element by its ID. The clone is inserted right after the original with new IDs.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['post_id', 'element_id'],
@@ -728,10 +728,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/generate-element', [
+        wp_register_ability('mcp-api-for-elementor/generate-element', [
             'label'       => 'Generate Element',
             'description' => 'Generate a well-formed Elementor element using the Element Factory. Supports containers, rows, columns, and all common widgets (heading, text, image, button, form, etc.) and composite patterns (hero, content-row). Returns the element JSON ready to be used with add-element or save-page-data.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['type'],
@@ -832,10 +832,10 @@ class Abilities_Provider {
 
     private static function register_template_abilities(): void {
 
-        wp_register_ability('elementor-mcp-api/list-templates', [
+        wp_register_ability('mcp-api-for-elementor/list-templates', [
             'label'       => 'List Templates',
             'description' => 'List all Elementor Theme Builder templates (headers, footers, single, archive, etc.) with their display conditions.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'output_schema' => [
                 'type'  => 'array',
                 'items' => [
@@ -869,10 +869,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/create-template', [
+        wp_register_ability('mcp-api-for-elementor/create-template', [
             'label'       => 'Create Template',
             'description' => 'Create an Elementor Theme Builder template (header, footer, single, archive, etc.) with display conditions. Conditions format: ["include/general"] for entire site.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['title', 'type', 'data'],
@@ -924,10 +924,10 @@ class Abilities_Provider {
 
     private static function register_kit_abilities(): void {
 
-        wp_register_ability('elementor-mcp-api/get-kit', [
+        wp_register_ability('mcp-api-for-elementor/get-kit', [
             'label'       => 'Get Global Kit Settings',
             'description' => 'Get the Elementor global kit settings including site colors, typography, button styles, and layout defaults.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'output_schema' => [
                 'type' => 'object',
             ],
@@ -938,10 +938,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/update-kit', [
+        wp_register_ability('mcp-api-for-elementor/update-kit', [
             'label'       => 'Update Global Kit Settings',
             'description' => 'Update Elementor global kit settings (colors, typography, buttons, etc.). Merges with existing settings. Automatically flushes all CSS cache.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['settings'],
@@ -973,10 +973,10 @@ class Abilities_Provider {
 
     private static function register_widget_abilities(): void {
 
-        wp_register_ability('elementor-mcp-api/list-widgets', [
+        wp_register_ability('mcp-api-for-elementor/list-widgets', [
             'label'       => 'List Widgets',
             'description' => 'List all available Elementor widgets with their names, titles, icons, and categories.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'output_schema' => [
                 'type'  => 'array',
                 'items' => [
@@ -996,10 +996,10 @@ class Abilities_Provider {
             'meta' => self::meta_read(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/get-widget-schema', [
+        wp_register_ability('mcp-api-for-elementor/get-widget-schema', [
             'label'       => 'Get Widget Schema',
             'description' => 'Get the full control schema for a specific Elementor widget, showing all available settings with their types, labels, defaults, and options. Essential for knowing what settings to pass when creating or updating widgets.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['widget_name'],
@@ -1028,10 +1028,10 @@ class Abilities_Provider {
 
     private static function register_utility_abilities(): void {
 
-        wp_register_ability('elementor-mcp-api/flush-css', [
+        wp_register_ability('mcp-api-for-elementor/flush-css', [
             'label'       => 'Flush CSS Cache',
             'description' => 'Flush the Elementor CSS cache. Optionally for a specific post, or all posts if no post_id is given.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'properties' => [
@@ -1061,10 +1061,10 @@ class Abilities_Provider {
             'meta' => self::meta_write(),
         ]);
 
-        wp_register_ability('elementor-mcp-api/build-page', [
+        wp_register_ability('mcp-api-for-elementor/build-page', [
             'label'       => 'Build Complete Page',
             'description' => 'Create or update a complete Elementor page in a single call. Optionally creates the page, imports images, and saves the full Elementor element tree. This is the most powerful ability for building pages from scratch.',
-            'category'    => 'elementor-mcp-api',
+            'category'    => 'mcp-api-for-elementor',
             'input_schema' => [
                 'type'       => 'object',
                 'required'   => ['data'],

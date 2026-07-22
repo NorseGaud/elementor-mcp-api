@@ -62,4 +62,4 @@ if (!class_exists('WP_Error')) {
     }
 }
 
-require_once dirname(__DIR__) . '/elementor-mcp-api.php';
+require_once dirname(__DIR__) . '/mcp-api-for-elementor.php';

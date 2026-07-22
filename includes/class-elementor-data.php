@@ -1,5 +1,5 @@
 <?php
-namespace ElementorMcpApi;
+namespace McpApiForElementor;
 
 /**
  * Elementor Data Manager - handles reading/writing Elementor page data.

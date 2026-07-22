@@ -7,7 +7,7 @@
     cacheResult="false"
 >
     <testsuites>
-        <testsuite name="Elementor MCP API">
+        <testsuite name="MCP API for Elementor">
             <directory suffix="Test.php">tests</directory>
         </testsuite>
     </testsuites>

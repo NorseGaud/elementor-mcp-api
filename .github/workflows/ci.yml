@@ -41,7 +41,7 @@ jobs:
           set -euo pipefail
           while IFS= read -r -d '' file; do
             php -l "$file"
-          done < <(find elementor-mcp-api.php includes -name '*.php' -print0)
+          done < <(find mcp-api-for-elementor.php includes -name '*.php' -print0)
 
       - name: PHPCS
         run: composer lint

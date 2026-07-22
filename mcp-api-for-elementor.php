@@ -1,30 +1,33 @@
 <?php
 /**
- * Plugin Name: Elementor MCP API
+ * Plugin Name: MCP API for Elementor
  * Description: REST API + MCP tools for AI-driven Elementor page building. Exposes endpoints to create, read, update pages, elements, templates, and global settings programmatically. Compatible with WordPress MCP Adapter.
  * Version: 2.1.2
  * Author: Jérémy Christillin (bvisible) & Nathan Pierce (NorseGaud)
  * Requires at least: 6.0
  * Requires PHP: 7.4
+ * Requires Plugins: elementor
+ * Text Domain: mcp-api-for-elementor
  * License: GPL-3.0
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
 
 if (!defined('ABSPATH')) exit;
 
-define('ELEMENTOR_MCP_API_VERSION', '2.1.2');
-define('ELEMENTOR_MCP_API_PATH', plugin_dir_path(__FILE__));
+define('MCP_API_FOR_ELEMENTOR_VERSION', '2.1.2');
+define('MCP_API_FOR_ELEMENTOR_PATH', plugin_dir_path(__FILE__));
 
 // Load core includes
-require_once ELEMENTOR_MCP_API_PATH . 'includes/class-permissions.php';
-require_once ELEMENTOR_MCP_API_PATH . 'includes/class-element-factory.php';
-require_once ELEMENTOR_MCP_API_PATH . 'includes/class-elementor-data.php';
-require_once ELEMENTOR_MCP_API_PATH . 'includes/class-rest-controller.php';
+require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-permissions.php';
+require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-element-factory.php';
+require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-elementor-data.php';
+require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-rest-controller.php';
 
 // ── REST API ────────────────────────────────────────────────
 add_action('rest_api_init', function () {
     if (!did_action('elementor/loaded')) return;
 
-    $controller = new ElementorMcpApi\REST_Controller();
+    $controller = new McpApiForElementor\REST_Controller();
     $controller->register_routes();
 });
 
@@ -34,28 +37,28 @@ add_action('rest_api_init', function () {
 add_action('wp_abilities_api_categories_init', function () {
     if (!did_action('elementor/loaded')) return;
 
-    require_once ELEMENTOR_MCP_API_PATH . 'includes/class-abilities-provider.php';
-    ElementorMcpApi\Abilities_Provider::register_category();
+    require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-abilities-provider.php';
+    McpApiForElementor\Abilities_Provider::register_category();
 });
 
 add_action('wp_abilities_api_init', function () {
     if (!did_action('elementor/loaded')) return;
 
-    if (!class_exists('ElementorMcpApi\\Abilities_Provider')) {
-        require_once ELEMENTOR_MCP_API_PATH . 'includes/class-abilities-provider.php';
+    if (!class_exists('McpApiForElementor\\Abilities_Provider')) {
+        require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-abilities-provider.php';
     }
-    ElementorMcpApi\Abilities_Provider::register();
+    McpApiForElementor\Abilities_Provider::register();
 });
 
-// Dedicated MCP server: /wp-json/elementor-mcp-api/mcp
+// Dedicated MCP server: /wp-json/mcp-api-for-elementor/mcp
 // Fires only when WordPress MCP Adapter is active.
 add_action('mcp_adapter_init', function ($adapter) {
-    require_once ELEMENTOR_MCP_API_PATH . 'includes/class-mcp-server.php';
-    ElementorMcpApi\Mcp_Server::register($adapter);
+    require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-mcp-server.php';
+    McpApiForElementor\Mcp_Server::register($adapter);
 });
 
 // ── Post Meta Registration ──────────────────────────────────
-// Keep _elementor_data out of core REST; use elementor-mcp-api/v1 endpoints instead.
+// Keep _elementor_data out of core REST; use mcp-api-for-elementor/v1 endpoints instead.
 add_action('init', function () {
     register_post_meta('page', '_elementor_data', [
         'show_in_rest' => false,

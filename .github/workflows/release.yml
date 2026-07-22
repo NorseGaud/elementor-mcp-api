@@ -41,7 +41,7 @@ jobs:
           set -euo pipefail
           php <<'PHP'
           <?php
-          $file = 'elementor-mcp-api.php';
+          $file = 'mcp-api-for-elementor.php';
           $bump = getenv('BUMP') ?: 'patch';
           if (!in_array($bump, ['patch', 'minor', 'major'], true)) {
               fwrite(STDERR, "Invalid bump type: {$bump}\n");
@@ -57,8 +57,8 @@ jobs:
               fwrite(STDERR, "Could not parse Version header from {$file}\n");
               exit(1);
           }
-          if (!preg_match("/define\(\s*'ELEMENTOR_MCP_API_VERSION'\s*,\s*'([^']+)'\s*\)/", $contents, $constant)) {
-              fwrite(STDERR, "Could not parse ELEMENTOR_MCP_API_VERSION from {$file}\n");
+          if (!preg_match("/define\(\s*'MCP_API_FOR_ELEMENTOR_VERSION'\s*,\s*'([^']+)'\s*\)/", $contents, $constant)) {
+              fwrite(STDERR, "Could not parse MCP_API_FOR_ELEMENTOR_VERSION from {$file}\n");
               exit(1);
           }
 
@@ -104,14 +104,14 @@ jobs:
               exit(1);
           }
           $updated = preg_replace(
-              "/(define\(\s*'ELEMENTOR_MCP_API_VERSION'\s*,\s*')([^']+)('\s*\))/",
+              "/(define\(\s*'MCP_API_FOR_ELEMENTOR_VERSION'\s*,\s*')([^']+)('\s*\))/",
               '${1}' . $new_version . '${3}',
               $updated,
               1,
               $const_count
           );
           if ($updated === null || $const_count !== 1) {
-              fwrite(STDERR, "Failed to update ELEMENTOR_MCP_API_VERSION\n");
+              fwrite(STDERR, "Failed to update MCP_API_FOR_ELEMENTOR_VERSION\n");
               exit(1);
           }
           if (file_put_contents($file, $updated) === false) {
@@ -137,7 +137,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add elementor-mcp-api.php
+          git add mcp-api-for-elementor.php
           git commit -m "Bump version to ${VERSION}"
 
       - name: Install dependencies
@@ -148,7 +148,7 @@ jobs:
           set -euo pipefail
           while IFS= read -r -d '' file; do
             php -l "$file"
-          done < <(find elementor-mcp-api.php includes -name '*.php' -print0)
+          done < <(find mcp-api-for-elementor.php includes -name '*.php' -print0)
 
       - name: PHPCS
         run: composer lint
@@ -173,13 +173,14 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
-          SLUG="elementor-mcp-api"
+          SLUG="mcp-api-for-elementor"
           STAGE="$(mktemp -d)"
           DEST="${STAGE}/${SLUG}"
           mkdir -p "${DEST}/includes"
 
-          cp elementor-mcp-api.php "${DEST}/"
+          cp mcp-api-for-elementor.php "${DEST}/"
           cp includes/*.php "${DEST}/includes/"
+          cp readme.txt LICENSE "${DEST}/"
 
           ZIP_NAME="${SLUG}-${VERSION}.zip"
           (
@@ -205,4 +206,4 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
-          files: elementor-mcp-api-${{ steps.version.outputs.version }}.zip
+          files: mcp-api-for-elementor-${{ steps.version.outputs.version }}.zip
