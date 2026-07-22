@@ -3,8 +3,16 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: Release mode
+        required: true
+        default: bump
+        type: choice
+        options:
+          - bump
+          - rerelease
       bump:
-        description: Version bump type
+        description: Version bump type (ignored when mode is rerelease)
         required: true
         default: patch
         type: choice
@@ -18,7 +26,7 @@ permissions:
 
 jobs:
   release:
-    name: Bump, tag, zip, and publish
+    name: Tag, zip, and publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -33,17 +41,24 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Bump plugin version
+      - name: Resolve plugin version
         id: version
         env:
+          MODE: ${{ inputs.mode }}
           BUMP: ${{ inputs.bump }}
         run: |
           set -euo pipefail
           php <<'PHP'
           <?php
           $file = 'mcp-api-for-elementor.php';
+          $mode = getenv('MODE') ?: 'bump';
           $bump = getenv('BUMP') ?: 'patch';
-          if (!in_array($bump, ['patch', 'minor', 'major'], true)) {
+
+          if (!in_array($mode, ['bump', 'rerelease'], true)) {
+              fwrite(STDERR, "Invalid mode: {$mode}\n");
+              exit(1);
+          }
+          if ($mode === 'bump' && !in_array($bump, ['patch', 'minor', 'major'], true)) {
               fwrite(STDERR, "Invalid bump type: {$bump}\n");
               exit(1);
           }
@@ -77,68 +92,151 @@ jobs:
               exit(1);
           }
 
-          $major = (int) $parts[1];
-          $minor = (int) $parts[2];
-          $patch = (int) $parts[3];
-          if ($bump === 'major') {
-              $major++;
-              $minor = 0;
-              $patch = 0;
-          } elseif ($bump === 'minor') {
-              $minor++;
-              $patch = 0;
-          } else {
-              $patch++;
-          }
-
-          $new_version = "{$major}.{$minor}.{$patch}";
-          $updated = preg_replace(
-              '/^(\s*\*\s*Version:\s*).+$/mi',
-              '${1}' . $new_version,
-              $contents,
-              1,
-              $header_count
-          );
-          if ($updated === null || $header_count !== 1) {
-              fwrite(STDERR, "Failed to update Version header\n");
-              exit(1);
-          }
-          $updated = preg_replace(
-              "/(define\(\s*'MCP_API_FOR_ELEMENTOR_VERSION'\s*,\s*')([^']+)('\s*\))/",
-              '${1}' . $new_version . '${3}',
-              $updated,
-              1,
-              $const_count
-          );
-          if ($updated === null || $const_count !== 1) {
-              fwrite(STDERR, "Failed to update MCP_API_FOR_ELEMENTOR_VERSION\n");
-              exit(1);
-          }
-          if (file_put_contents($file, $updated) === false) {
-              fwrite(STDERR, "Failed to write {$file}\n");
-              exit(1);
-          }
-
           $readme = 'readme.txt';
           $readme_contents = file_get_contents($readme);
           if ($readme_contents === false) {
               fwrite(STDERR, "Unable to read {$readme}\n");
               exit(1);
           }
-          $readme_updated = preg_replace(
-              '/^Stable tag:\s*.+$/mi',
-              'Stable tag: ' . $new_version,
-              $readme_contents,
-              1,
-              $stable_count
-          );
-          if ($readme_updated === null || $stable_count !== 1) {
-              fwrite(STDERR, "Failed to update Stable tag in {$readme}\n");
+          if (!preg_match('/^== Changelog ==\s*$/m', $readme_contents)) {
+              fwrite(STDERR, "{$readme} is missing an == Changelog == section\n");
               exit(1);
           }
-          if (file_put_contents($readme, $readme_updated) === false) {
-              fwrite(STDERR, "Failed to write {$readme}\n");
-              exit(1);
+
+          $changed_files = false;
+
+          if ($mode === 'rerelease') {
+              $new_version = $header_version;
+              $previous_version = $header_version;
+
+              if (!preg_match('/^Stable tag:\s*(.+)$/mi', $readme_contents, $stable)) {
+                  fwrite(STDERR, "Could not parse Stable tag from {$readme}\n");
+                  exit(1);
+              }
+              $stable_tag = trim($stable[1]);
+              if ($stable_tag !== $new_version) {
+                  fwrite(STDERR, "rerelease requires Stable tag ({$stable_tag}) to match plugin version ({$new_version})\n");
+                  exit(1);
+              }
+
+              $version_heading = '/^=\s*' . preg_quote($new_version, '/') . '\s*=\s*$/m';
+              if (!preg_match($version_heading, $readme_contents)) {
+                  fwrite(STDERR, "rerelease requires \"= {$new_version} =\" under == Changelog == in {$readme}\n");
+                  exit(1);
+              }
+
+              echo "Rerelease mode: keeping version {$new_version}\n";
+          } else {
+              $major = (int) $parts[1];
+              $minor = (int) $parts[2];
+              $patch = (int) $parts[3];
+              if ($bump === 'major') {
+                  $major++;
+                  $minor = 0;
+                  $patch = 0;
+              } elseif ($bump === 'minor') {
+                  $minor++;
+                  $patch = 0;
+              } else {
+                  $patch++;
+              }
+
+              $previous_version = $header_version;
+              $new_version = "{$major}.{$minor}.{$patch}";
+              $changed_files = true;
+
+              $updated = preg_replace(
+                  '/^(\s*\*\s*Version:\s*).+$/mi',
+                  '${1}' . $new_version,
+                  $contents,
+                  1,
+                  $header_count
+              );
+              if ($updated === null || $header_count !== 1) {
+                  fwrite(STDERR, "Failed to update Version header\n");
+                  exit(1);
+              }
+              $updated = preg_replace(
+                  "/(define\(\s*'MCP_API_FOR_ELEMENTOR_VERSION'\s*,\s*')([^']+)('\s*\))/",
+                  '${1}' . $new_version . '${3}',
+                  $updated,
+                  1,
+                  $const_count
+              );
+              if ($updated === null || $const_count !== 1) {
+                  fwrite(STDERR, "Failed to update MCP_API_FOR_ELEMENTOR_VERSION\n");
+                  exit(1);
+              }
+              if (file_put_contents($file, $updated) === false) {
+                  fwrite(STDERR, "Failed to write {$file}\n");
+                  exit(1);
+              }
+
+              $readme_updated = preg_replace(
+                  '/^Stable tag:\s*.+$/mi',
+                  'Stable tag: ' . $new_version,
+                  $readme_contents,
+                  1,
+                  $stable_count
+              );
+              if ($readme_updated === null || $stable_count !== 1) {
+                  fwrite(STDERR, "Failed to update Stable tag in {$readme}\n");
+                  exit(1);
+              }
+
+              // Ensure Changelog has a = {new_version} = block (keep hand-written if present).
+              $version_heading = '/^=\s*' . preg_quote($new_version, '/') . '\s*=\s*$/m';
+              if (!preg_match($version_heading, $readme_updated)) {
+                  $bullets = [];
+                  $prev_tag = 'v' . $previous_version;
+                  $log_cmd = 'git log ' . escapeshellarg($prev_tag) . '..HEAD --pretty=format:%s --no-merges 2>/dev/null';
+                  $log_out = shell_exec($log_cmd);
+                  if (is_string($log_out) && $log_out !== '') {
+                      foreach (preg_split("/\r\n|\n|\r/", trim($log_out)) as $subject) {
+                          $subject = trim($subject);
+                          if ($subject === '') {
+                              continue;
+                          }
+                          if (preg_match('/^Bump version to /i', $subject)) {
+                              continue;
+                          }
+                          $bullets[] = $subject;
+                      }
+                  }
+                  if ($bullets === []) {
+                      fwrite(STDERR, "No Changelog entry for {$new_version} and no commits since {$prev_tag} to generate one.\n");
+                      fwrite(STDERR, "Add \"= {$new_version} =\" under == Changelog == in {$readme} before releasing, or ensure there are commits since the previous tag.\n");
+                      exit(1);
+                  }
+
+                  $section = "= {$new_version} =\n\n";
+                  foreach ($bullets as $subject) {
+                      $section .= '* ' . $subject . "\n";
+                  }
+                  $section .= "\n";
+
+                  $readme_updated = preg_replace(
+                      '/^(== Changelog ==\s*\n)/m',
+                      '$1' . "\n" . $section,
+                      $readme_updated,
+                      1,
+                      $changelog_count
+                  );
+                  if ($readme_updated === null || $changelog_count !== 1) {
+                      fwrite(STDERR, "Failed to insert Changelog section for {$new_version}\n");
+                      exit(1);
+                  }
+                  echo "Inserted Changelog section for {$new_version} from git history since {$prev_tag}\n";
+              } else {
+                  echo "Changelog already has a section for {$new_version}\n";
+              }
+
+              if (file_put_contents($readme, $readme_updated) === false) {
+                  fwrite(STDERR, "Failed to write {$readme}\n");
+                  exit(1);
+              }
+
+              echo "Bumped version {$previous_version} -> {$new_version} ({$bump})\n";
           }
 
           $tag = 'v' . $new_version;
@@ -147,13 +245,16 @@ jobs:
               fwrite(STDERR, "GITHUB_OUTPUT is not set\n");
               exit(1);
           }
-          file_put_contents($output, "previous={$header_version}\n", FILE_APPEND);
+          file_put_contents($output, "mode={$mode}\n", FILE_APPEND);
+          file_put_contents($output, "previous={$previous_version}\n", FILE_APPEND);
           file_put_contents($output, "version={$new_version}\n", FILE_APPEND);
           file_put_contents($output, "tag={$tag}\n", FILE_APPEND);
-          echo "Bumped version {$header_version} -> {$new_version} ({$bump}) (tag {$tag})\n";
+          file_put_contents($output, 'changed=' . ($changed_files ? 'true' : 'false') . "\n", FILE_APPEND);
+          echo "Resolved tag {$tag} (mode={$mode})\n";
           PHP
 
       - name: Commit version bump
+        if: steps.version.outputs.changed == 'true'
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
@@ -195,7 +296,33 @@ jobs:
           build-dir: ./.plugin-check-build/mcp-api-for-elementor
           slug: mcp-api-for-elementor
 
+      - name: Delete existing GitHub release and tag
+        if: steps.version.outputs.mode == 'rerelease'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          echo "Removing existing release/tag for ${TAG} (if present)..."
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release delete "${TAG}" --yes
+            echo "Deleted GitHub release ${TAG}"
+          else
+            echo "No GitHub release named ${TAG}"
+          fi
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            git tag -d "${TAG}"
+            echo "Deleted local tag ${TAG}"
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            git push origin ":refs/tags/${TAG}"
+            echo "Deleted remote tag ${TAG}"
+          else
+            echo "No remote tag ${TAG}"
+          fi
+
       - name: Ensure tag does not already exist
+        if: steps.version.outputs.mode == 'bump'
         run: |
           set -euo pipefail
           TAG="${{ steps.version.outputs.tag }}"
@@ -231,14 +358,17 @@ jobs:
           unzip -l "${ZIP_NAME}"
           unzip -l "${ZIP_NAME}" | grep -q 'instructions-guidance.md'
 
-      - name: Push version bump and tag
+      - name: Push branch and tag
         run: |
           set -euo pipefail
           TAG="${{ steps.version.outputs.tag }}"
           VERSION="${{ steps.version.outputs.version }}"
           BRANCH="${{ github.ref_name }}"
+          MODE="${{ steps.version.outputs.mode }}"
           git tag -a "${TAG}" -m "Release ${VERSION}"
-          git push origin "HEAD:refs/heads/${BRANCH}"
+          if [[ "${MODE}" == "bump" ]]; then
+            git push origin "HEAD:refs/heads/${BRANCH}"
+          fi
           git push origin "${TAG}"
 
       - name: Create GitHub Release
