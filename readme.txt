@@ -2,9 +2,9 @@
 Contributors: norsegaud
 Tags: elementor, rest-api, mcp, ai, api
 Requires at least: 6.0
-Tested up to: 6.8
-Requires PHP: 7.4
-Stable tag: 2.1.3
+Tested up to: 7.0
+Requires PHP: 8.0
+Stable tag: 2.1.4
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -70,6 +70,12 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 
 == Changelog ==
 
+= 2.1.4 =
+* Require PHP 8.0+ (matches runtime use of PHP 8 APIs).
+* Update Tested up to WordPress 7.0.
+* Include instructions-guidance.md in the release zip for get-instructions.
+* Prefer uploads jail `mcp-api-for-elementor-import/` (legacy `elementor-mcp-import/` still accepted).
+
 = 2.1.3 =
 * Add `mcp-api-for-elementor-get-instructions` MCP tool (auto tool catalog + static guidance).
 * Remove local `agent-skill` install path; instructions are served from the plugin.
@@ -80,6 +86,9 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 * Add WordPress.org `readme.txt` and plugin dependency header for Elementor.
 
 == Upgrade Notice ==
+
+= 2.1.4 =
+Requires PHP 8.0+. Media import jail path is now `uploads/mcp-api-for-elementor-import/` (legacy path still works).
 
 = 2.1.3 =
 New MCP tool `get-instructions` replaces the local agent skill. Call it before Elementor page work.

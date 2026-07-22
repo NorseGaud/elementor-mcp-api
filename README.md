@@ -4,7 +4,7 @@ WordPress plugin that exposes a REST API + MCP (Model Context Protocol) abilitie
 
 Build, edit, and manage Elementor pages programmatically — designed to be used by AI agents (Claude, GPT, etc.) or any HTTP client.
 
-> **Breaking rename:** Formerly “Elementor MCP API” (`elementor-mcp-api`). Public REST/MCP paths, ability IDs, and tool names now use `mcp-api-for-elementor`. Update clients and `mcp.json` configs. The GitHub repository name is unchanged.
+> **Breaking rename:** Formerly “Elementor MCP API” (`elementor-mcp-api`). Public REST/MCP paths, ability IDs, and tool names now use `mcp-api-for-elementor`. Update clients and `mcp.json` configs. The GitHub repository is `mcp-api-for-elementor`.
 
 ## Features
 
@@ -19,7 +19,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 ## Requirements
 
 - WordPress 6.0+ for the REST API; **WordPress 6.9+** for MCP (the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) is in core — the standalone [abilities-api](https://github.com/WordPress/abilities-api) plugin repo is archived)
-- PHP 7.4+
+- PHP 8.0+
 - Elementor (free or Pro)
 - For MCP (Cursor / Claude / etc.): [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (required — without it `/wp-json/mcp-api-for-elementor/mcp` will 404)
 - Authentication: WordPress Application Passwords (recommended) or cookie auth
@@ -30,7 +30,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 1. Download or clone this repository into `wp-content/plugins/` and use the plugin slug folder name:
    ```bash
    cd wp-content/plugins/
-   git clone https://github.com/NorseGaud/elementor-mcp-api.git mcp-api-for-elementor
+   git clone https://github.com/NorseGaud/mcp-api-for-elementor.git
    ```
 2. Activate the plugin in WordPress admin
 3. Create an Application Password in **Users → Your Profile → Application Passwords**
@@ -198,7 +198,7 @@ If Cursor shows a green status but **“No tools, prompts, or resources”**, th
 - **Element IDs**: Always provide valid 8-character hex IDs when creating elements.
 - **PATCH merges settings**: Only send the settings you want to change, not the full settings object.
 - **Default page status**: `POST /page` and `POST /build-page` default to `draft`. Publishing requires `publish_pages`.
-- **Media import jail**: `POST /media/import` only accepts real image files under `wp-content/uploads/elementor-mcp-import/`.
+- **Media import jail**: `POST /media/import` only accepts real image files under `wp-content/uploads/mcp-api-for-elementor-import/` (legacy `elementor-mcp-import/` still accepted).
 - **MCP tools**: Exposed on `/wp-json/mcp-api-for-elementor/mcp` (authenticated Application Password session; dedicated admin password recommended).
 
 ## License

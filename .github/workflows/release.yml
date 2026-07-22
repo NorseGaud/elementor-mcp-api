@@ -119,6 +119,28 @@ jobs:
               exit(1);
           }
 
+          $readme = 'readme.txt';
+          $readme_contents = file_get_contents($readme);
+          if ($readme_contents === false) {
+              fwrite(STDERR, "Unable to read {$readme}\n");
+              exit(1);
+          }
+          $readme_updated = preg_replace(
+              '/^Stable tag:\s*.+$/mi',
+              'Stable tag: ' . $new_version,
+              $readme_contents,
+              1,
+              $stable_count
+          );
+          if ($readme_updated === null || $stable_count !== 1) {
+              fwrite(STDERR, "Failed to update Stable tag in {$readme}\n");
+              exit(1);
+          }
+          if (file_put_contents($readme, $readme_updated) === false) {
+              fwrite(STDERR, "Failed to write {$readme}\n");
+              exit(1);
+          }
+
           $tag = 'v' . $new_version;
           $output = getenv('GITHUB_OUTPUT');
           if ($output === false || $output === '') {
@@ -137,7 +159,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add mcp-api-for-elementor.php
+          git add mcp-api-for-elementor.php readme.txt
           git commit -m "Bump version to ${VERSION}"
 
       - name: Install dependencies
@@ -180,6 +202,7 @@ jobs:
 
           cp mcp-api-for-elementor.php "${DEST}/"
           cp includes/*.php "${DEST}/includes/"
+          cp includes/instructions-guidance.md "${DEST}/includes/"
           cp readme.txt LICENSE "${DEST}/"
 
           ZIP_NAME="${SLUG}-${VERSION}.zip"
@@ -189,6 +212,7 @@ jobs:
           )
           echo "Built ${ZIP_NAME}"
           unzip -l "${ZIP_NAME}"
+          unzip -l "${ZIP_NAME}" | grep -q 'instructions-guidance.md'
 
       - name: Push version bump and tag
         run: |

@@ -1128,7 +1128,7 @@ class Abilities_Provider {
                     ],
                     'images' => [
                         'type'        => 'array',
-                        'description' => 'Optional array of {source_path, title}. source_path must be under wp-content/uploads/elementor-mcp-import/ and be a real image.',
+                        'description' => 'Optional array of {source_path, title}. source_path must be under wp-content/uploads/mcp-api-for-elementor-import/ (legacy elementor-mcp-import/ still accepted) and be a real image.',
                         'items'       => [
                             'type'       => 'object',
                             'properties' => [

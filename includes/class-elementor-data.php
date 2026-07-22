@@ -319,13 +319,19 @@ class Elementor_Data {
 
     // ── Media ────────────────────────────────────────────────
 
+    /** Preferred import jail under wp-content/uploads/. */
+    const IMPORT_STAGING_SLUG = 'mcp-api-for-elementor-import';
+
+    /** Legacy jail slug (still accepted for reads). */
+    const IMPORT_STAGING_SLUG_LEGACY = 'elementor-mcp-import';
+
     /**
      * Staging directory for filesystem imports (under uploads).
-     * Only files inside this directory may be imported.
+     * Only files inside an allowed jail directory may be imported.
      */
     public static function import_staging_dir(): string {
         $upload_dir = wp_upload_dir();
-        $dir = trailingslashit($upload_dir['basedir']) . 'elementor-mcp-import';
+        $dir = trailingslashit($upload_dir['basedir']) . self::IMPORT_STAGING_SLUG;
 
         if (!is_dir($dir)) {
             wp_mkdir_p($dir);
@@ -341,23 +347,51 @@ class Elementor_Data {
     }
 
     /**
+     * Absolute paths of allowed import jails (primary + legacy).
+     *
+     * @return list<string>
+     */
+    public static function import_jail_dirs(): array {
+        $base = trailingslashit(wp_upload_dir()['basedir']);
+        return [
+            $base . self::IMPORT_STAGING_SLUG,
+            $base . self::IMPORT_STAGING_SLUG_LEGACY,
+        ];
+    }
+
+    /**
+     * Whether $real_path is a file under an allowed import jail.
+     */
+    private static function is_inside_import_jail(string $real_path): bool {
+        foreach (self::import_jail_dirs() as $dir) {
+            $staging = realpath($dir);
+            if ($staging === false) {
+                continue;
+            }
+            $prefix = $staging . DIRECTORY_SEPARATOR;
+            if (str_starts_with($real_path, $prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Import an image from a jailed file path into the WP media library.
-     * Source must resolve inside uploads/elementor-mcp-import/ and be a real image.
+     * Source must resolve inside uploads/mcp-api-for-elementor-import/ (or the legacy
+     * elementor-mcp-import/ jail) and be a real image.
      */
     public static function import_image(string $source_path, string $title = ''): int {
         if ($source_path === '') {
             return 0;
         }
 
-        $staging = realpath(self::import_staging_dir());
-        $real    = realpath($source_path);
+        // Ensure the preferred jail exists for new drops.
+        self::import_staging_dir();
 
-        if ($staging === false || $real === false || !is_file($real)) {
-            return 0;
-        }
+        $real = realpath($source_path);
 
-        $staging_prefix = $staging . DIRECTORY_SEPARATOR;
-        if (!str_starts_with($real, $staging_prefix)) {
+        if ($real === false || !is_file($real) || !self::is_inside_import_jail($real)) {
             return 0;
         }
 
