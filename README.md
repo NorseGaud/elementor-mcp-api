@@ -6,6 +6,9 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 
 > **Breaking rename:** Formerly “Elementor MCP API” (`elementor-mcp-api`). Public REST/MCP paths, ability IDs, and tool names now use `mcp-api-for-elementor`. Update clients and `mcp.json` configs. The GitHub repository is `mcp-api-for-elementor`.
 
+Official WordPress Marketplace Listing: [https://wordpress.org/plugins/mcp-api-for-elementor/](https://wordpress.org/plugins/mcp-api-for-elementor/)
+
+
 ## Features
 
 - **Full CRUD** on Elementor pages, elements, and templates
@@ -24,37 +27,6 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 - For MCP (Cursor / Claude / etc.): [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (required — without it `/wp-json/mcp-api-for-elementor/mcp` will 404)
 - Authentication: WordPress Application Passwords (recommended) or cookie auth
 - Authorization: page read/write requires `edit_pages` (+ per-page `edit_post`); publish requires `publish_pages`; kit/templates/CSS flush require `manage_options`
-
-## Installation
-
-1. Download or clone this repository into `wp-content/plugins/` and use the plugin slug folder name:
-   ```bash
-   cd wp-content/plugins/
-   git clone https://github.com/NorseGaud/mcp-api-for-elementor.git
-   ```
-2. Activate the plugin in WordPress admin
-3. Create an Application Password in **Users → Your Profile → Application Passwords**
-
-### Deploy over SFTP
-
-Use `upload-sftp.py` from the repo root to push the plugin into a remote WordPress `wp-content/plugins/` directory. Requires [paramiko](https://www.paramiko.org/) (`pip install paramiko`).
-
-Credentials are read from environment variables (nothing is stored in the script):
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `SFTP_HOST` | yes | SFTP hostname |
-| `SFTP_USER` | yes | SFTP username |
-| `SFTP_PASS` | yes | SFTP password |
-| `SFTP_PORT` | no | Port (default `22`) |
-
-```bash
-SFTP_HOST=sftp.example.com SFTP_PORT=32022 \
-SFTP_USER=myuser SFTP_PASS='secret' \
-python3 upload-sftp.py
-```
-
-The script locates `wp-content/plugins`, uploads into `mcp-api-for-elementor/`, and overwrites matching remote files on re-run. It skips `.git`, `.gitignore`, and the upload script itself. Remote files that no longer exist locally are not deleted.
 
 ## API & MCP Tools
 
@@ -204,3 +176,42 @@ If Cursor shows a green status but **“No tools, prompts, or resources”**, th
 ## License
 
 GPL-3.0 — see [LICENSE](LICENSE)
+
+---
+
+## Installation
+
+### WordPress Marketplace
+
+[https://wordpress.org/plugins/mcp-api-for-elementor/](https://wordpress.org/plugins/mcp-api-for-elementor/)
+
+### Manual Installation
+
+1. Download or clone this repository into `wp-content/plugins/` and use the plugin slug folder name:
+   ```bash
+   cd wp-content/plugins/
+   git clone https://github.com/NorseGaud/mcp-api-for-elementor.git
+   ```
+2. Activate the plugin in WordPress admin
+3. Create an Application Password in **Users → Your Profile → Application Passwords**
+
+### Deploy over SFTP (Dev only)
+
+Use `upload-sftp.py` from the repo root to push the plugin into a remote WordPress `wp-content/plugins/` directory. Requires [paramiko](https://www.paramiko.org/) (`pip install paramiko`).
+
+Credentials are read from environment variables (nothing is stored in the script):
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SFTP_HOST` | yes | SFTP hostname |
+| `SFTP_USER` | yes | SFTP username |
+| `SFTP_PASS` | yes | SFTP password |
+| `SFTP_PORT` | no | Port (default `22`) |
+
+```bash
+SFTP_HOST=sftp.example.com SFTP_PORT=32022 \
+SFTP_USER=myuser SFTP_PASS='secret' \
+python3 upload-sftp.py
+```
+
+The script locates `wp-content/plugins`, uploads into `mcp-api-for-elementor/`, and overwrites matching remote files on re-run. It skips `.git`, `.gitignore`, and the upload script itself. Remote files that no longer exist locally are not deleted.

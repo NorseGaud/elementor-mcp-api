@@ -70,6 +70,10 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 
 == Changelog ==
 
+= 3.0.0 =
+
+All changes from 2.1.5 and later.
+
 = 2.1.5 =
 * Require WordPress 6.9+ (matches Abilities API usage checked by Plugin Check).
 * Replace mt_rand/strip_tags/unlink with wp_rand/wp_strip_all_tags/wp_delete_file.
