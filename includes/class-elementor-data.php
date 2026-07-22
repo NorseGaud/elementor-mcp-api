@@ -311,14 +311,14 @@ class Elementor_Data {
      * Update Elementor page/document settings (merge + optional key removal).
      *
      * Nested associative arrays (e.g. `__globals__`) are deep-merged.
-     * Use `$unset` to remove keys (e.g. leftover `background_gradient_type`).
+     * Use `$unset_keys` to remove keys (e.g. leftover `background_gradient_type`).
      * Flushes CSS for the post on success.
      *
-     * @param array<string, mixed> $settings Settings to merge.
-     * @param list<string>         $unset    Setting keys to remove after merge.
+     * @param array<string, mixed> $settings   Settings to merge.
+     * @param list<string>         $unset_keys Setting keys to remove after merge.
      * @return array<string, mixed>|\WP_Error Merged settings, or error.
      */
-    public static function update_page_settings(int $post_id, array $settings = [], array $unset = []) {
+    public static function update_page_settings(int $post_id, array $settings = [], array $unset_keys = []) {
         if (!get_post($post_id)) {
             return new \WP_Error('not_found', 'Page not found.');
         }
@@ -326,7 +326,7 @@ class Elementor_Data {
         $current = self::get_page_settings($post_id);
         $merged  = self::merge_assoc_settings($current, $settings);
 
-        foreach ($unset as $key) {
+        foreach ($unset_keys as $key) {
             if (!is_string($key) || $key === '') {
                 continue;
             }

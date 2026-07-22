@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pre-commit: PHPCS on staged plugin PHP (same ruleset as CI).
+# Pre-commit: full PHPCS (same scope/ruleset as CI composer lint).
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -10,19 +10,8 @@ if [[ ! -f vendor/bin/phpcs ]]; then
   exit 1
 fi
 
-files=()
-while IFS= read -r -d '' f; do
-  if [[ "$f" == "mcp-api-for-elementor.php" || "$f" == includes/* ]]; then
-    files+=("$f")
-  fi
-done < <(git diff --cached --name-only -z --diff-filter=ACMR -- '*.php')
-
-if [[ ${#files[@]} -eq 0 ]]; then
-  exit 0
-fi
-
-echo "pre-commit: PHPCS (${#files[@]} file(s))..."
-if ! vendor/bin/phpcs --standard=phpcs.xml.dist -- "${files[@]}"; then
+echo "pre-commit: PHPCS (full tree)..."
+if ! vendor/bin/phpcs --standard=phpcs.xml.dist; then
   cat >&2 <<'EOF'
 
 pre-commit: PHPCS found violations. Fix them before committing.

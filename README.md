@@ -221,7 +221,7 @@ git config core.hooksPath .githooks
 
 `composer install` creates `vendor/` (gitignored), including `vendor/bin/phpcs`. Without it, the pre-commit hook fails with a clear error.
 
-Point `core.hooksPath` at `.githooks` once per clone so PHPCS runs on staged plugin PHP before each commit.
+Point `core.hooksPath` at `.githooks` once per clone so full-tree PHPCS runs before each commit (same as CI).
 
 ### Lint and tests
 
@@ -235,7 +235,7 @@ CI on the `edge` branch also runs PHP syntax checks, PHPCS, PHPUnit, and WordPre
 
 ### Pre-commit
 
-`.githooks/pre-commit` lints staged files under `mcp-api-for-elementor.php` and `includes/**` with the same ruleset as CI. On violations it blocks the commit and prompts you to fix (`composer lint:fix`, re-check with `composer lint`, re-stage, commit again). Install deps and enable the hooks path (see [Setup](#setup)) before committing.
+`.githooks/pre-commit` runs full-tree PHPCS via `phpcs.xml.dist` (same as CI `composer lint`), not only staged files. On violations it blocks the commit and prompts you to fix (`composer lint:fix`, re-check with `composer lint`, re-stage, commit again). Install deps and enable the hooks path (see [Setup](#setup)) before committing.
 
 ### Deploy over SFTP
 
