@@ -71,10 +71,7 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 
 * release workflow fix
 * hook lint
-* hook lint
-* hook lint
-* hook lint
-* * Add get/update page settings tools for Elementor document Body Style (`_elementor_page_settings`). * REST: GET/PATCH `/page/{id}/settings` with merge + optional `unset` key removal. * MCP: `mcp-api-for-elementor-get-page-settings` and `mcp-api-for-elementor-update-page-settings`.
+* Add get/update page settings tools for Elementor document Body Style (`_elementor_page_settings`). REST: GET/PATCH `/page/{id}/settings` with merge + optional `unset` key removal. MCP: `mcp-api-for-elementor-get-page-settings` and `mcp-api-for-elementor-update-page-settings`.
 * readme
 * workflow fix
 

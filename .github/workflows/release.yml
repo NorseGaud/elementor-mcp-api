@@ -148,6 +148,7 @@ jobs:
               }
 
               $bullets = [];
+              $seen = [];
               $log_cmd = 'git log ' . escapeshellarg($base_tag) . '..HEAD --pretty=format:%s --no-merges 2>/dev/null';
               $log_out = shell_exec($log_cmd);
               if (is_string($log_out) && $log_out !== '') {
@@ -156,6 +157,11 @@ jobs:
                       if ($subject === '' || preg_match('/^Bump version to /i', $subject)) {
                           continue;
                       }
+                      $dedupe_key = strtolower($subject);
+                      if (isset($seen[$dedupe_key])) {
+                          continue;
+                      }
+                      $seen[$dedupe_key] = true;
                       $bullets[] = $subject;
                   }
               }
