@@ -31,7 +31,7 @@ Requirements:
 
 * Elementor (free or Pro) — required
 * WordPress 6.9+ (Abilities API in core; required for MCP tools and declared plugin minimum)
-* WordPress MCP Adapter — optional; required only if you want the `/wp-json/mcp-api-for-elementor/mcp` endpoint
+* WordPress MCP Adapter (https://github.com/wordpress/mcp-adapter) — optional; required only if you want the `/wp-json/mcp-api-for-elementor/mcp` endpoint
 
 Authentication uses WordPress Application Passwords (recommended) or cookie auth. Authorization uses standard capabilities (`edit_pages`, `publish_pages`, `manage_options`).
 
@@ -41,7 +41,7 @@ Authentication uses WordPress Application Passwords (recommended) or cookie auth
 2. Upload the plugin zip via Plugins → Add New → Upload Plugin, or install from the WordPress.org directory.
 3. Activate MCP API for Elementor.
 4. Create an Application Password under Users → Profile → Application Passwords.
-5. (Optional) Install and activate the WordPress MCP Adapter plugin to enable MCP tools.
+5. (Optional) Install and activate the WordPress MCP Adapter plugin to enable MCP tools. Download from https://github.com/wordpress/mcp-adapter
 
 REST base: `/wp-json/mcp-api-for-elementor/v1`
 MCP endpoint: `/wp-json/mcp-api-for-elementor/mcp`
