@@ -1,10 +1,10 @@
 === MCP API for Elementor ===
 Contributors: norsegaud
 Tags: elementor, rest-api, mcp, ai, api
-Requires at least: 6.0
+Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 2.1.4
+Stable tag: 2.1.5
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -30,7 +30,7 @@ Features:
 Requirements:
 
 * Elementor (free or Pro) — required
-* WordPress 6.0+ for the REST API; WordPress 6.9+ recommended for MCP (Abilities API in core)
+* WordPress 6.9+ (Abilities API in core; required for MCP tools and declared plugin minimum)
 * WordPress MCP Adapter — optional; required only if you want the `/wp-json/mcp-api-for-elementor/mcp` endpoint
 
 Authentication uses WordPress Application Passwords (recommended) or cookie auth. Authorization uses standard capabilities (`edit_pages`, `publish_pages`, `manage_options`).
@@ -70,6 +70,10 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 
 == Changelog ==
 
+= 2.1.5 =
+* Require WordPress 6.9+ (matches Abilities API usage checked by Plugin Check).
+* Replace mt_rand/strip_tags/unlink with wp_rand/wp_strip_all_tags/wp_delete_file.
+
 = 2.1.4 =
 * Require PHP 8.0+ (matches runtime use of PHP 8 APIs).
 * Update Tested up to WordPress 7.0.
@@ -86,6 +90,9 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 * Add WordPress.org `readme.txt` and plugin dependency header for Elementor.
 
 == Upgrade Notice ==
+
+= 2.1.5 =
+Requires WordPress 6.9 or later.
 
 = 2.1.4 =
 Requires PHP 8.0+. Media import jail path is now `uploads/mcp-api-for-elementor-import/` (legacy path still works).

@@ -172,7 +172,7 @@ class Elementor_Data {
         $settings = $el['settings'] ?? [];
         $identifiers = [];
         if (!empty($settings['title'])) $identifiers['title'] = mb_substr($settings['title'], 0, 50);
-        if (!empty($settings['editor'])) $identifiers['text'] = mb_substr(strip_tags($settings['editor']), 0, 50);
+        if (!empty($settings['editor'])) $identifiers['text'] = mb_substr(wp_strip_all_tags($settings['editor']), 0, 50);
         if (!empty($settings['content_width'])) $identifiers['content_width'] = $settings['content_width'];
         if (!empty($settings['flex_direction'])) $identifiers['flex_direction'] = $settings['flex_direction'];
         if ($identifiers) $summary['hint'] = $identifiers;
@@ -443,7 +443,7 @@ class Elementor_Data {
         ], $dest);
 
         if (!$attach_id || is_wp_error($attach_id)) {
-            @unlink($dest);
+            wp_delete_file($dest);
             return 0;
         }
 
@@ -555,7 +555,7 @@ class Elementor_Data {
             $upload_dir = wp_upload_dir();
             $css_path   = $upload_dir['basedir'] . '/elementor/css/post-' . $post_id . '.css';
             if (file_exists($css_path)) {
-                unlink($css_path);
+                wp_delete_file($css_path);
             }
             delete_post_meta($post_id, '_elementor_css');
         }

@@ -18,7 +18,7 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 
 ## Requirements
 
-- WordPress 6.0+ for the REST API; **WordPress 6.9+** for MCP (the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) is in core — the standalone [abilities-api](https://github.com/WordPress/abilities-api) plugin repo is archived)
+- **WordPress 6.9+** (the [Abilities API](https://developer.wordpress.org/apis/abilities-api/) is in core — the standalone [abilities-api](https://github.com/WordPress/abilities-api) plugin repo is archived)
 - PHP 8.0+
 - Elementor (free or Pro)
 - For MCP (Cursor / Claude / etc.): [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (required — without it `/wp-json/mcp-api-for-elementor/mcp` will 404)

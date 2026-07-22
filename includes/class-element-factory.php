@@ -11,7 +11,7 @@ class Element_Factory {
      * Generate a unique 8-char hex ID for Elementor elements.
      */
     public static function generate_id(): string {
-        return substr(md5(uniqid(mt_rand(), true)), 0, 8);
+        return substr(md5(uniqid((string) wp_rand(), true)), 0, 8);
     }
 
     /**
