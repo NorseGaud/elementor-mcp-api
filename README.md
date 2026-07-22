@@ -235,7 +235,7 @@ CI on the `edge` branch also runs PHP syntax checks, PHPCS, PHPUnit, and WordPre
 
 ### Pre-commit
 
-`.githooks/pre-commit` lints staged files under `mcp-api-for-elementor.php` and `includes/**` with the same ruleset as CI. Install deps and enable the hooks path (see [Setup](#setup)) before committing.
+`.githooks/pre-commit` lints staged files under `mcp-api-for-elementor.php` and `includes/**` with the same ruleset as CI. On violations it blocks the commit and prompts you to fix (`composer lint:fix`, re-check with `composer lint`, re-stage, commit again). Install deps and enable the hooks path (see [Setup](#setup)) before committing.
 
 ### Deploy over SFTP
 

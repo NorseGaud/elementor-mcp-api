@@ -22,4 +22,15 @@ if [[ ${#files[@]} -eq 0 ]]; then
 fi
 
 echo "pre-commit: PHPCS (${#files[@]} file(s))..."
-vendor/bin/phpcs --standard=phpcs.xml.dist -- "${files[@]}"
+if ! vendor/bin/phpcs --standard=phpcs.xml.dist -- "${files[@]}"; then
+  cat >&2 <<'EOF'
+
+pre-commit: PHPCS found violations. Fix them before committing.
+
+  composer lint:fix          # or: vendor/bin/phpcbf
+  composer lint             # or: vendor/bin/phpcs
+  git add <fixed files>     # re-stage, then commit again
+
+EOF
+  exit 1
+fi
