@@ -8,9 +8,6 @@ Build, edit, and manage Elementor pages programmatically — designed to be used
 
 > **Breaking rename:** Formerly “Elementor MCP API” (`elementor-mcp-api`). Public REST/MCP paths, ability IDs, and tool names now use `mcp-api-for-elementor`. Update clients and `mcp.json` configs. The GitHub repository is `mcp-api-for-elementor`.
 
-Official WordPress Marketplace Listing: [https://wordpress.org/plugins/mcp-api-for-elementor/](https://wordpress.org/plugins/mcp-api-for-elementor/)
-
-
 ## Features
 
 - **Full CRUD** on Elementor pages, elements, and templates
@@ -187,7 +184,7 @@ GPL-3.0 — see [LICENSE](LICENSE)
 
 ### WordPress Marketplace
 
-[https://wordpress.org/plugins/mcp-api-for-elementor/](https://wordpress.org/plugins/mcp-api-for-elementor/)
+Not available at the moment.
 
 ### Manual Installation
 
