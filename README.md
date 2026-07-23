@@ -1,5 +1,7 @@
 # MCP API for Elementor
 
+[![CI](https://github.com/NorseGaud/mcp-api-for-elementor/actions/workflows/ci.yml/badge.svg?branch=edge)](https://github.com/NorseGaud/mcp-api-for-elementor/actions/workflows/ci.yml)
+
 WordPress plugin that exposes a REST API + MCP (Model Context Protocol) abilities for AI-driven Elementor page editing.
 
 Build, edit, and manage Elementor pages programmatically — designed to be used by AI agents (Claude, GPT, etc.) or any HTTP client.
