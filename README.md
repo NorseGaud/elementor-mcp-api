@@ -26,7 +26,7 @@ Official WordPress Marketplace Listing: [https://wordpress.org/plugins/mcp-api-f
 - Elementor (free or Pro)
 - For MCP (Cursor / Claude / etc.): [WordPress MCP Adapter](https://github.com/WordPress/mcp-adapter) plugin (required — without it `/wp-json/mcp-api-for-elementor/mcp` will 404)
 - Authentication: WordPress Application Passwords (recommended) or cookie auth
-- Authorization: page read/write requires `edit_pages` (+ per-page `edit_post`); publish requires `publish_pages`; kit/templates/CSS flush require `manage_options`
+- Authorization: page read/write requires `edit_pages` (+ per-page `edit_post`); media import / build-page with images also requires `upload_files`; publish requires `publish_pages`; kit/templates/CSS flush require `manage_options`
 
 ## API & MCP Tools
 

@@ -14,7 +14,8 @@
     "scripts": {
         "lint": "phpcs",
         "lint:fix": "phpcbf",
-        "test": "phpunit"
+        "test": "phpunit",
+        "test:coverage": "phpdbg -qrr vendor/bin/phpunit --coverage-text"
     },
     "config": {
         "allow-plugins": {

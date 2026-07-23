@@ -46,6 +46,21 @@ class Abilities_Provider {
         return Permissions::can_edit();
     }
 
+    /**
+     * Permission for build-page: edit_pages, plus upload_files when importing images.
+     *
+     * @param mixed $input Ability input (array when images may be present).
+     */
+    public static function can_build_page($input = null): bool {
+        if (!Permissions::can_edit()) {
+            return false;
+        }
+        if (is_array($input) && !empty($input['images'])) {
+            return Permissions::can_upload();
+        }
+        return true;
+    }
+
     /** Permission: Admin (manage_options) for kit/templates/flush. */
     public static function can_manage(): bool {
         return Permissions::can_manage();
@@ -1259,6 +1274,10 @@ class Abilities_Provider {
                 // Import images first (jailed staging dir + image MIME only)
                 $image_ids = [];
                 if (!empty($input['images'])) {
+                    $upload = Permissions::authorize_upload();
+                    if (is_wp_error($upload)) {
+                        return $upload;
+                    }
                     foreach ($input['images'] as $img) {
                         $path = $img['source_path'] ?? ($img['path'] ?? '');
                         $id = Elementor_Data::import_image($path, $img['title'] ?? '');
@@ -1298,7 +1317,7 @@ class Abilities_Provider {
                     'image_ids' => $image_ids,
                 ];
             },
-            'permission_callback' => [self::class, 'can_edit'],
+            'permission_callback' => [self::class, 'can_build_page'],
             'meta' => self::meta_write(),
         ]);
     }

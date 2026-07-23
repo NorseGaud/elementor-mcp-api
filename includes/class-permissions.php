@@ -30,6 +30,27 @@ class Permissions {
         return current_user_can('publish_pages');
     }
 
+    /** Import media into the library (Author+ by default). */
+    public static function can_upload(): bool {
+        return current_user_can('upload_files');
+    }
+
+    /**
+     * Require upload_files before importing media.
+     *
+     * @return true|\WP_Error
+     */
+    public static function authorize_upload() {
+        if (!self::can_upload()) {
+            return new \WP_Error(
+                'cannot_upload',
+                'The upload_files capability is required to import media.',
+                ['status' => 403]
+            );
+        }
+        return true;
+    }
+
     /**
      * Normalize page status. Defaults to draft.
      * publish / private / future require publish_pages.

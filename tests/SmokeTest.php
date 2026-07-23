@@ -1,7 +1,5 @@
 <?php
 
-use PHPUnit\Framework\TestCase;
-
 class SmokeTest extends TestCase {
 
     public function test_plugin_version_constant_is_defined() {
@@ -24,6 +22,9 @@ class SmokeTest extends TestCase {
     public function test_instructions_composer_builds_markdown() {
         $guidance = dirname(__DIR__) . '/includes/instructions-guidance.md';
         $this->assertFileExists($guidance);
+
+        require_once dirname(__DIR__) . '/includes/class-abilities-provider.php';
+        McpApiForElementor\Abilities_Provider::register();
 
         $result = McpApiForElementor\Instructions_Composer::build();
         $this->assertIsArray($result);
@@ -88,6 +89,9 @@ class SmokeTest extends TestCase {
     }
 
     public function test_instructions_mention_page_settings_tools() {
+        require_once dirname(__DIR__) . '/includes/class-abilities-provider.php';
+        McpApiForElementor\Abilities_Provider::register();
+
         $result = McpApiForElementor\Instructions_Composer::build();
         $this->assertStringContainsString(
             'mcp-api-for-elementor-get-page-settings',

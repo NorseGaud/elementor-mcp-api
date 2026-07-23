@@ -33,7 +33,7 @@ Requirements:
 * WordPress 6.9+ (Abilities API in core; required for MCP tools and declared plugin minimum)
 * WordPress MCP Adapter (https://github.com/wordpress/mcp-adapter) — optional; required only if you want the `/wp-json/mcp-api-for-elementor/mcp` endpoint
 
-Authentication uses WordPress Application Passwords (recommended) or cookie auth. Authorization uses standard capabilities (`edit_pages`, `publish_pages`, `manage_options`).
+Authentication uses WordPress Application Passwords (recommended) or cookie auth. Authorization uses standard capabilities (`edit_pages`, `upload_files`, `publish_pages`, `manage_options`).
 
 == Installation ==
 
@@ -58,7 +58,7 @@ No. The REST API works without it. Install WordPress MCP Adapter only if you wan
 
 = What capabilities are required? =
 
-Page read/write requires `edit_pages` (plus per-page `edit_post`). Publishing requires `publish_pages`. Kit, templates, and CSS flush require `manage_options`.
+Page read/write requires `edit_pages` (plus per-page `edit_post`). Media import (and build-page with images) also requires `upload_files`. Publishing requires `publish_pages`. Kit, templates, and CSS flush require `manage_options`.
 
 = How do AI agents get building instructions? =
 

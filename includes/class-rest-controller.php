@@ -181,7 +181,7 @@ class REST_Controller {
         register_rest_route(self::NAMESPACE, '/media/import', [
             'methods'  => 'POST',
             'callback' => [$this, 'import_media'],
-            ...$editor,
+            'permission_callback' => [$this, 'check_media_import_permission'],
         ]);
 
         // ── Cache (admin) ────────────────────────────────
@@ -195,7 +195,7 @@ class REST_Controller {
         register_rest_route(self::NAMESPACE, '/build-page', [
             'methods'  => 'POST',
             'callback' => [$this, 'build_page'],
-            ...$editor,
+            'permission_callback' => [$this, 'check_build_page_permission'],
         ]);
     }
 
@@ -211,6 +211,25 @@ class REST_Controller {
 
     public function check_manage_permission(): bool {
         return Permissions::can_manage();
+    }
+
+    /** Media import always writes to the media library. */
+    public function check_media_import_permission(): bool {
+        return Permissions::can_edit() && Permissions::can_upload();
+    }
+
+    /**
+     * Build-page needs edit_pages; upload_files only when images are included.
+     */
+    public function check_build_page_permission(\WP_REST_Request $request): bool {
+        if (!Permissions::can_edit()) {
+            return false;
+        }
+        $body = $request->get_json_params() ?: [];
+        if (!empty($body['images']) && is_array($body['images'])) {
+            return Permissions::can_upload();
+        }
+        return true;
     }
 
     /**
@@ -992,6 +1011,12 @@ class REST_Controller {
         // Import images if provided (jailed to staging dir)
         $media_map = [];
         if (!empty($body['images']) && is_array($body['images'])) {
+            $upload = Permissions::authorize_upload();
+            if (is_wp_error($upload)) {
+                $data = $upload->get_error_data();
+                $code = is_array($data) && isset($data['status']) ? (int) $data['status'] : 403;
+                return new \WP_REST_Response(['error' => $upload->get_error_message()], $code);
+            }
             foreach ($body['images'] as $key => $img) {
                 $attach_id = Elementor_Data::import_image($img['path'] ?? '', $img['title'] ?? '');
                 $media_map[$key] = [
