@@ -4,7 +4,7 @@ Tags: elementor, rest-api, mcp, ai, api
 Requires at least: 6.9
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 3.2.0
+Stable tag: 3.3.0
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -66,6 +66,14 @@ Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the
 
 == Changelog ==
 
+
+
+= 3.3.0 =
+
+* README about no wordpress marketplace
+* CI passing badge
+* Require upload_files for media import and expand unit tests.
+* dedupe commits in changelog
 
 = 3.2.0 =
 
