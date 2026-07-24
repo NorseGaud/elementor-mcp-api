@@ -83,7 +83,7 @@ class ElementorDataTest extends TestCase {
         $this->assertArrayHasKey('custom_colors', $kit);
     }
 
-    public function test_create_template_writes_pro_conditions_option() {
+    public function test_create_template_stores_conditions_meta() {
         $post_id = McpApiForElementor\Elementor_Data::create_template(
             'Header',
             'header',
@@ -92,8 +92,15 @@ class ElementorDataTest extends TestCase {
         );
         $this->assertGreaterThan(0, $post_id);
         $this->assertSame('header', get_post_meta($post_id, '_elementor_template_type', true));
-        $all = get_option('elementor_pro_theme_builder_conditions');
-        $this->assertSame(['include/general'], $all['header'][$post_id]);
+        $this->assertSame(
+            ['include/general'],
+            get_post_meta($post_id, '_elementor_conditions', true)
+        );
+        // Elementor Pro owns elementor_pro_theme_builder_conditions; this plugin
+        // must not write that option directly (WordPress.org prefix rule).
+        $this->assertFalse(
+            array_key_exists('elementor_pro_theme_builder_conditions', $GLOBALS['mcp_test_state']['options'] ?? [])
+        );
     }
 
     public function test_widget_discovery_and_defaults() {

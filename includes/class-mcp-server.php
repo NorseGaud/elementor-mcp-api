@@ -28,7 +28,7 @@ class Mcp_Server {
         }
 
         if (!class_exists(Abilities_Provider::class)) {
-            require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-abilities-provider.php';
+            require_once MCPAPFOE_PATH . 'includes/class-abilities-provider.php';
         }
 
         $error_handler = class_exists(\WP\MCP\Infrastructure\ErrorHandling\ErrorLogMcpErrorHandler::class)
@@ -45,7 +45,7 @@ class Mcp_Server {
             self::ROUTE,
             'MCP API for Elementor',
             'AI-driven Elementor page building tools.',
-            'v' . MCP_API_FOR_ELEMENTOR_VERSION,
+            'v' . MCPAPFOE_VERSION,
             [\WP\MCP\Transport\HttpTransport::class],
             $error_handler,
             $observability,

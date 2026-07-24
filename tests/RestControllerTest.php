@@ -13,6 +13,15 @@ class RestControllerTest extends TestCase {
         $this->controller->register_routes();
         $this->assertNotEmpty($GLOBALS['mcp_test_state']['rest_routes']);
 
+        foreach ($GLOBALS['mcp_test_state']['rest_routes'] as $route) {
+            $this->assertArrayHasKey(
+                'permission_callback',
+                $route['args'],
+                'Route ' . $route['namespace'] . $route['route'] . ' must declare permission_callback'
+            );
+            $this->assertNotEmpty($route['args']['permission_callback']);
+        }
+
         $this->grant_caps(['edit_pages']);
         $this->assertTrue($this->controller->check_read_permission());
         $this->assertTrue($this->controller->check_edit_permission());

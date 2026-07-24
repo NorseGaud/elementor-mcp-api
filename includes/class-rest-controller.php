@@ -10,192 +10,196 @@ class REST_Controller {
     const NAMESPACE = 'mcp-api-for-elementor/v1';
 
     public function register_routes(): void {
-        $editor  = ['permission_callback' => [$this, 'check_edit_permission']];
-        $reader  = ['permission_callback' => [$this, 'check_read_permission']];
-        $manager = ['permission_callback' => [$this, 'check_manage_permission']];
+        // Keep permission_callback as an explicit array key on every route.
+        // WordPress.org Plugin Check static analysis does not detect spread merges.
+        $can_edit    = [$this, 'check_edit_permission'];
+        $can_read    = [$this, 'check_read_permission'];
+        $can_manage  = [$this, 'check_manage_permission'];
+        $can_media   = [$this, 'check_media_import_permission'];
+        $can_build   = [$this, 'check_build_page_permission'];
 
         // ── Pages ────────────────────────────────────────
         register_rest_route(self::NAMESPACE, '/pages', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'list_pages'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'list_pages'],
+            'permission_callback' => $can_read,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'get_page'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_page'],
+            'permission_callback' => $can_read,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/structure', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'get_page_structure'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_page_structure'],
+            'permission_callback' => $can_read,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)', [
-            'methods'  => 'PUT',
-            'callback' => [$this, 'update_page'],
-            ...$editor,
+            'methods'             => 'PUT',
+            'callback'            => [$this, 'update_page'],
+            'permission_callback' => $can_edit,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/meta', [
-            'methods'  => 'PATCH',
-            'callback' => [$this, 'update_page_meta'],
-            ...$editor,
+            'methods'             => 'PATCH',
+            'callback'            => [$this, 'update_page_meta'],
+            'permission_callback' => $can_edit,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/settings', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'get_page_settings'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_page_settings'],
+            'permission_callback' => $can_read,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/settings', [
-            'methods'  => 'PATCH',
-            'callback' => [$this, 'update_page_settings'],
-            ...$editor,
+            'methods'             => 'PATCH',
+            'callback'            => [$this, 'update_page_settings'],
+            'permission_callback' => $can_edit,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'create_page'],
-            ...$editor,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'create_page'],
+            'permission_callback' => $can_edit,
         ]);
 
         // ── Elements (granular operations) ───────────────
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/element', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'add_element'],
-            ...$editor,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'add_element'],
+            'permission_callback' => $can_edit,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/element/(?P<element_id>[a-f0-9]+)', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'get_element'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_element'],
+            'permission_callback' => $can_read,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/element/(?P<element_id>[a-f0-9]+)', [
-            'methods'  => 'PATCH',
-            'callback' => [$this, 'update_element'],
-            ...$editor,
+            'methods'             => 'PATCH',
+            'callback'            => [$this, 'update_element'],
+            'permission_callback' => $can_edit,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/element/(?P<element_id>[a-f0-9]+)', [
-            'methods'  => 'DELETE',
-            'callback' => [$this, 'remove_element'],
-            ...$editor,
+            'methods'             => 'DELETE',
+            'callback'            => [$this, 'remove_element'],
+            'permission_callback' => $can_edit,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/element/(?P<element_id>[a-f0-9]+)/duplicate', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'duplicate_element'],
-            ...$editor,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'duplicate_element'],
+            'permission_callback' => $can_edit,
         ]);
 
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/element/(?P<element_id>[a-f0-9]+)/move', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'move_element'],
-            ...$editor,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'move_element'],
+            'permission_callback' => $can_edit,
         ]);
 
         // ── Bulk operations (1.3.0) ──────────────────────
         // Apply many PATCH operations in a single page load/save cycle.
         // Body: {"patches":[{"id":"abc","settings":{...}}, ...]}
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/elements/patch-bulk', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'patch_elements_bulk'],
-            ...$editor,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'patch_elements_bulk'],
+            'permission_callback' => $can_edit,
         ]);
 
         // Helper: set flex column width on a container (Elementor v4 requires
         // _flex_size + _inline_size + width together — this endpoint sets all three).
         // Body: {"percent":25, "tablet":50, "mobile":100}
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/element/(?P<element_id>[a-f0-9]+)/column-width', [
-            'methods'  => 'PATCH',
-            'callback' => [$this, 'set_column_width'],
-            ...$editor,
+            'methods'             => 'PATCH',
+            'callback'            => [$this, 'set_column_width'],
+            'permission_callback' => $can_edit,
         ]);
 
         // Find elements by widgetType. Returns array of {id, parent_id, depth}.
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/find', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'find_elements'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'find_elements'],
+            'permission_callback' => $can_read,
         ]);
 
         // ── Section-level insert ─────────────────────────
         register_rest_route(self::NAMESPACE, '/page/(?P<id>\d+)/section', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'add_section'],
-            ...$editor,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'add_section'],
+            'permission_callback' => $can_edit,
         ]);
 
         // ── Templates (admin) ────────────────────────────
         register_rest_route(self::NAMESPACE, '/templates', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'list_templates'],
-            ...$manager,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'list_templates'],
+            'permission_callback' => $can_manage,
         ]);
 
         register_rest_route(self::NAMESPACE, '/template', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'create_template'],
-            ...$manager,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'create_template'],
+            'permission_callback' => $can_manage,
         ]);
 
         // ── Kit / Global Settings (admin) ────────────────
         register_rest_route(self::NAMESPACE, '/kit', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'get_kit'],
-            ...$manager,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_kit'],
+            'permission_callback' => $can_manage,
         ]);
 
         register_rest_route(self::NAMESPACE, '/kit', [
-            'methods'  => 'PUT',
-            'callback' => [$this, 'update_kit'],
-            ...$manager,
+            'methods'             => 'PUT',
+            'callback'            => [$this, 'update_kit'],
+            'permission_callback' => $can_manage,
         ]);
 
         // ── Widgets ──────────────────────────────────────
         register_rest_route(self::NAMESPACE, '/widgets', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'list_widgets'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'list_widgets'],
+            'permission_callback' => $can_read,
         ]);
 
         register_rest_route(self::NAMESPACE, '/widget/(?P<name>[a-z0-9_-]+)/schema', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'get_widget_schema'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_widget_schema'],
+            'permission_callback' => $can_read,
         ]);
 
         register_rest_route(self::NAMESPACE, '/widget/(?P<name>[a-z0-9_-]+)/defaults', [
-            'methods'  => 'GET',
-            'callback' => [$this, 'get_widget_defaults'],
-            ...$reader,
+            'methods'             => 'GET',
+            'callback'            => [$this, 'get_widget_defaults'],
+            'permission_callback' => $can_read,
         ]);
 
         // ── Media ────────────────────────────────────────
         register_rest_route(self::NAMESPACE, '/media/import', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'import_media'],
-            'permission_callback' => [$this, 'check_media_import_permission'],
+            'methods'             => 'POST',
+            'callback'            => [$this, 'import_media'],
+            'permission_callback' => $can_media,
         ]);
 
         // ── Cache (admin) ────────────────────────────────
         register_rest_route(self::NAMESPACE, '/flush-css', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'flush_css'],
-            ...$manager,
+            'methods'             => 'POST',
+            'callback'            => [$this, 'flush_css'],
+            'permission_callback' => $can_manage,
         ]);
 
         // ── Build (composite) ────────────────────────────
         register_rest_route(self::NAMESPACE, '/build-page', [
-            'methods'  => 'POST',
-            'callback' => [$this, 'build_page'],
-            'permission_callback' => [$this, 'check_build_page_permission'],
+            'methods'             => 'POST',
+            'callback'            => [$this, 'build_page'],
+            'permission_callback' => $can_build,
         ]);
     }
 

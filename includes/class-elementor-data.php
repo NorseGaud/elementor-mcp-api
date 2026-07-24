@@ -282,13 +282,34 @@ class Elementor_Data {
         $json = wp_slash(wp_json_encode($data));
         update_post_meta($post_id, '_elementor_data', $json);
 
-        // Register conditions with Elementor Pro
-        $all_conditions = get_option('elementor_pro_theme_builder_conditions', []);
-        $all_conditions[$type] = $all_conditions[$type] ?? [];
-        $all_conditions[$type][$post_id] = $conditions;
-        update_option('elementor_pro_theme_builder_conditions', $all_conditions);
+        // Register Theme Builder conditions via Elementor Pro's API only.
+        // Do not write Elementor-owned options (e.g. elementor_pro_*) directly.
+        self::sync_theme_builder_conditions($post_id, $conditions);
 
         return $post_id;
+    }
+
+    /**
+     * Ask Elementor Pro to persist/regenerate Theme Builder conditions.
+     *
+     * Falls back to post meta alone when Elementor Pro is unavailable.
+     */
+    private static function sync_theme_builder_conditions(int $post_id, array $conditions): void {
+        if (!class_exists('\\ElementorPro\\Modules\\ThemeBuilder\\Module')) {
+            return;
+        }
+
+        $module = \ElementorPro\Modules\ThemeBuilder\Module::instance();
+        if (!is_object($module) || !method_exists($module, 'get_conditions_manager')) {
+            return;
+        }
+
+        $manager = $module->get_conditions_manager();
+        if (!is_object($manager) || !method_exists($manager, 'save_conditions')) {
+            return;
+        }
+
+        $manager->save_conditions($post_id, $conditions);
     }
 
     // ── Page document settings (Body Style, etc.) ────────────

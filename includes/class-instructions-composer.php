@@ -14,8 +14,8 @@ class Instructions_Composer {
      * @return array{markdown: string, plugin_version: string}
      */
     public static function build(): array {
-        $version = defined('MCP_API_FOR_ELEMENTOR_VERSION')
-            ? MCP_API_FOR_ELEMENTOR_VERSION
+        $version = defined('MCPAPFOE_VERSION')
+            ? MCPAPFOE_VERSION
             : '';
 
         $parts = [];
@@ -48,7 +48,7 @@ class Instructions_Composer {
     }
 
     private static function load_guidance(): string {
-        $path = MCP_API_FOR_ELEMENTOR_PATH . 'includes/instructions-guidance.md';
+        $path = MCPAPFOE_PATH . 'includes/instructions-guidance.md';
         if (!is_readable($path)) {
             return "## Guidance\n\n_Static guidance file is missing from this install._";
         }
@@ -67,7 +67,7 @@ class Instructions_Composer {
         $lines[] = '';
 
         if (!class_exists(Abilities_Provider::class)) {
-            $provider = MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-abilities-provider.php';
+            $provider = MCPAPFOE_PATH . 'includes/class-abilities-provider.php';
             if (is_readable($provider)) {
                 require_once $provider;
             }

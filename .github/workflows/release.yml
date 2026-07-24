@@ -72,8 +72,8 @@ jobs:
               file_put_contents('php://stderr', "Could not parse Version header from {$file}\n");
               exit(1);
           }
-          if (!preg_match("/define\(\s*'MCP_API_FOR_ELEMENTOR_VERSION'\s*,\s*'([^']+)'\s*\)/", $contents, $constant)) {
-              file_put_contents('php://stderr', "Could not parse MCP_API_FOR_ELEMENTOR_VERSION from {$file}\n");
+          if (!preg_match("/define\(\s*'MCPAPFOE_VERSION'\s*,\s*'([^']+)'\s*\)/", $contents, $constant)) {
+              file_put_contents('php://stderr', "Could not parse MCPAPFOE_VERSION from {$file}\n");
               exit(1);
           }
 
@@ -248,14 +248,14 @@ jobs:
                   exit(1);
               }
               $updated = preg_replace(
-                  "/(define\(\s*'MCP_API_FOR_ELEMENTOR_VERSION'\s*,\s*')([^']+)('\s*\))/",
+                  "/(define\(\s*'MCPAPFOE_VERSION'\s*,\s*')([^']+)('\s*\))/",
                   '${1}' . $new_version . '${3}',
                   $updated,
                   1,
                   $const_count
               );
               if ($updated === null || $const_count !== 1) {
-                  file_put_contents('php://stderr', "Failed to update MCP_API_FOR_ELEMENTOR_VERSION\n");
+                  file_put_contents('php://stderr', "Failed to update MCPAPFOE_VERSION\n");
                   exit(1);
               }
               if (file_put_contents($file, $updated) === false) {

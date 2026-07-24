@@ -135,7 +135,7 @@ class Abilities_Provider {
 
     private static function register_instructions_ability(): void {
         if (!class_exists(Instructions_Composer::class)) {
-            require_once MCP_API_FOR_ELEMENTOR_PATH . 'includes/class-instructions-composer.php';
+            require_once MCPAPFOE_PATH . 'includes/class-instructions-composer.php';
         }
 
         wp_register_ability('mcp-api-for-elementor/get-instructions', [

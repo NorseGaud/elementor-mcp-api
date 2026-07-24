@@ -1,3 +1,5 @@
 - Never include any mention of cursor in the commit message.
 - IF there are major changes to files/structure, make sure the upload-sftp.py script is updated to support them.
-- Make sure that the readme.txt stays up to date for the wordpress.org plugin listing.
+- Keep `readme.txt` Description / Installation / FAQ content up to date for the WordPress.org plugin listing.
+- Do not bump the plugin version (`Version` header, `MCPAPFOE_VERSION`, or `readme.txt` `Stable tag`). CI bumps version on release.
+- Do not add or edit `readme.txt` Changelog entries. Changelog is generated automatically by CI.

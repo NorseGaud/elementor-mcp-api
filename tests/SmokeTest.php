@@ -3,11 +3,11 @@
 class SmokeTest extends TestCase {
 
     public function test_plugin_version_constant_is_defined() {
-        $this->assertTrue(defined('MCP_API_FOR_ELEMENTOR_VERSION'));
-        $this->assertNotEmpty(MCP_API_FOR_ELEMENTOR_VERSION);
+        $this->assertTrue(defined('MCPAPFOE_VERSION'));
+        $this->assertNotEmpty(MCPAPFOE_VERSION);
         $this->assertMatchesRegularExpression(
             '/^\d+\.\d+\.\d+/',
-            MCP_API_FOR_ELEMENTOR_VERSION
+            MCPAPFOE_VERSION
         );
     }
 
@@ -30,7 +30,7 @@ class SmokeTest extends TestCase {
         $this->assertIsArray($result);
         $this->assertArrayHasKey('markdown', $result);
         $this->assertArrayHasKey('plugin_version', $result);
-        $this->assertSame(MCP_API_FOR_ELEMENTOR_VERSION, $result['plugin_version']);
+        $this->assertSame(MCPAPFOE_VERSION, $result['plugin_version']);
         $this->assertStringContainsString('## Workflow', $result['markdown']);
         $this->assertStringContainsString('mcp-api-for-elementor-list-pages', $result['markdown']);
         $this->assertStringNotContainsString('curl -', $result['markdown']);
@@ -50,7 +50,7 @@ class SmokeTest extends TestCase {
         );
         $header_version = trim($header_matches[1]);
 
-        $this->assertSame($header_version, MCP_API_FOR_ELEMENTOR_VERSION);
+        $this->assertSame($header_version, MCPAPFOE_VERSION);
     }
 
     public function test_page_settings_abilities_are_listed() {
