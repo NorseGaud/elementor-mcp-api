@@ -40,6 +40,41 @@ class AbilitiesProviderTest extends TestCase {
         $this->assertArrayHasKey('mcp-api-for-elementor', $GLOBALS['mcp_test_state']['ability_categories']);
     }
 
+    /**
+     * Cursor's MCP UI validator rejects tools whose outputSchema.type is "array".
+     * Top-level output schemas must be objects (array results wrapped as { items: [...] }).
+     */
+    public function test_all_output_schemas_are_objects() {
+        foreach ($this->abilities as $name => $ability) {
+            if (!isset($ability['output_schema'])) {
+                continue;
+            }
+            $this->assertSame(
+                'object',
+                $ability['output_schema']['type'] ?? null,
+                "{$name} output_schema.type must be \"object\" for Cursor MCP catalog validation"
+            );
+        }
+    }
+
+    public function test_list_abilities_return_items_object() {
+        $this->insert_page('List Wrap Page');
+
+        $pages = $this->execute('mcp-api-for-elementor/list-pages');
+        $this->assertIsArray($pages);
+        $this->assertArrayHasKey('items', $pages);
+        $this->assertNotEmpty($pages['items']);
+        $this->assertArrayHasKey('id', $pages['items'][0]);
+
+        $templates = $this->execute('mcp-api-for-elementor/list-templates');
+        $this->assertArrayHasKey('items', $templates);
+        $this->assertIsArray($templates['items']);
+
+        $widgets = $this->execute('mcp-api-for-elementor/list-widgets');
+        $this->assertArrayHasKey('items', $widgets);
+        $this->assertIsArray($widgets['items']);
+    }
+
     public function test_permission_helpers() {
         $this->grant_caps(['edit_pages']);
         $this->assertTrue(McpApiForElementor\Abilities_Provider::can_read());
@@ -62,7 +97,7 @@ class AbilitiesProviderTest extends TestCase {
         $this->assertArrayHasKey('markdown', $instructions);
 
         $pages = $this->execute('mcp-api-for-elementor/list-pages');
-        $this->assertNotEmpty($pages);
+        $this->assertNotEmpty($pages['items']);
 
         $structure = $this->execute('mcp-api-for-elementor/get-page-structure', ['post_id' => $page_id]);
         $this->assertSame($page_id, $structure['id']);
@@ -146,7 +181,7 @@ class AbilitiesProviderTest extends TestCase {
             'element_id' => $eid,
         ])['success']);
 
-        $this->assertIsArray($this->execute('mcp-api-for-elementor/list-templates'));
+        $this->assertArrayHasKey('items', $this->execute('mcp-api-for-elementor/list-templates'));
 
         $tpl = $this->execute('mcp-api-for-elementor/create-template', [
             'title' => 'Hdr',
@@ -160,7 +195,7 @@ class AbilitiesProviderTest extends TestCase {
             'settings' => ['custom_colors' => []],
         ])['success']);
 
-        $this->assertNotEmpty($this->execute('mcp-api-for-elementor/list-widgets'));
+        $this->assertNotEmpty($this->execute('mcp-api-for-elementor/list-widgets')['items']);
         $this->assertIsArray($this->execute('mcp-api-for-elementor/get-widget-schema', ['widget_name' => 'heading']));
 
         $this->assertTrue($this->execute('mcp-api-for-elementor/flush-css', ['post_id' => $page_id])['success']);

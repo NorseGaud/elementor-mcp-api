@@ -3,8 +3,9 @@
 ## Workflow
 
 ### 1. Discover
-- `mcp-api-for-elementor-list-pages` — pages and Elementor status
-- `mcp-api-for-elementor-list-widgets` — available widgets (core, Pro, extensions)
+- `mcp-api-for-elementor-list-pages` — pages and Elementor status (`{ items: [...] }`)
+- `mcp-api-for-elementor-list-widgets` — available widgets (core, Pro, extensions) (`{ items: [...] }`)
+- `mcp-api-for-elementor-list-templates` — Theme Builder templates (`{ items: [...] }`)
 - `mcp-api-for-elementor-get-kit` — global colors/fonts
 
 ### 2. Explore

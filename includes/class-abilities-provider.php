@@ -170,19 +170,25 @@ class Abilities_Provider {
 
         wp_register_ability('mcp-api-for-elementor/list-pages', [
             'label'       => 'List Pages',
-            'description' => 'List all WordPress pages with their Elementor status. Returns page ID, title, slug, status, URL, and whether the page uses Elementor.',
+            'description' => 'List all WordPress pages with their Elementor status. Returns { items: [...] } with page ID, title, slug, status, URL, and whether the page uses Elementor.',
             'category'    => 'mcp-api-for-elementor',
+            // Cursor MCP UI requires outputSchema.type === "object" (not "array").
             'output_schema' => [
-                'type'  => 'array',
-                'items' => [
-                    'type'       => 'object',
-                    'properties' => [
-                        'id'    => ['type' => 'integer'],
-                        'title' => ['type' => 'string'],
-                        'slug'  => ['type' => 'string'],
-                        'status' => ['type' => 'string'],
-                        'url'   => ['type' => 'string'],
-                        'has_elementor' => ['type' => 'boolean'],
+                'type'       => 'object',
+                'properties' => [
+                    'items' => [
+                        'type'  => 'array',
+                        'items' => [
+                            'type'       => 'object',
+                            'properties' => [
+                                'id'            => ['type' => 'integer'],
+                                'title'         => ['type' => 'string'],
+                                'slug'          => ['type' => 'string'],
+                                'status'        => ['type' => 'string'],
+                                'url'           => ['type' => 'string'],
+                                'has_elementor' => ['type' => 'boolean'],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -205,7 +211,7 @@ class Abilities_Provider {
                         'has_elementor' => !empty(get_post_meta($page->ID, '_elementor_data', true)),
                     ];
                 }
-                return $result;
+                return ['items' => $result];
             },
             'permission_callback' => [self::class, 'can_read'],
             'meta' => self::meta_read(),
@@ -990,17 +996,23 @@ class Abilities_Provider {
 
         wp_register_ability('mcp-api-for-elementor/list-templates', [
             'label'       => 'List Templates',
-            'description' => 'List all Elementor Theme Builder templates (headers, footers, single, archive, etc.) with their display conditions.',
+            'description' => 'List all Elementor Theme Builder templates (headers, footers, single, archive, etc.) with their display conditions. Returns { items: [...] }.',
             'category'    => 'mcp-api-for-elementor',
+            // Cursor MCP UI requires outputSchema.type === "object" (not "array").
             'output_schema' => [
-                'type'  => 'array',
-                'items' => [
-                    'type'       => 'object',
-                    'properties' => [
-                        'id'         => ['type' => 'integer'],
-                        'title'      => ['type' => 'string'],
-                        'type'       => ['type' => 'string'],
-                        'conditions' => ['type' => 'array'],
+                'type'       => 'object',
+                'properties' => [
+                    'items' => [
+                        'type'  => 'array',
+                        'items' => [
+                            'type'       => 'object',
+                            'properties' => [
+                                'id'         => ['type' => 'integer'],
+                                'title'      => ['type' => 'string'],
+                                'type'       => ['type' => 'string'],
+                                'conditions' => ['type' => 'array'],
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -1019,7 +1031,7 @@ class Abilities_Provider {
                         'conditions' => get_post_meta($tpl->ID, '_elementor_conditions', true) ?: [],
                     ];
                 }
-                return $result;
+                return ['items' => $result];
             },
             'permission_callback' => [self::class, 'can_manage'],
             'meta' => self::meta_read(),
@@ -1131,22 +1143,28 @@ class Abilities_Provider {
 
         wp_register_ability('mcp-api-for-elementor/list-widgets', [
             'label'       => 'List Widgets',
-            'description' => 'List all available Elementor widgets with their names, titles, icons, and categories.',
+            'description' => 'List all available Elementor widgets with their names, titles, icons, and categories. Returns { items: [...] }.',
             'category'    => 'mcp-api-for-elementor',
+            // Cursor MCP UI requires outputSchema.type === "object" (not "array").
             'output_schema' => [
-                'type'  => 'array',
-                'items' => [
-                    'type'       => 'object',
-                    'properties' => [
-                        'name'       => ['type' => 'string'],
-                        'title'      => ['type' => 'string'],
-                        'icon'       => ['type' => 'string'],
-                        'categories' => ['type' => 'array'],
+                'type'       => 'object',
+                'properties' => [
+                    'items' => [
+                        'type'  => 'array',
+                        'items' => [
+                            'type'       => 'object',
+                            'properties' => [
+                                'name'       => ['type' => 'string'],
+                                'title'      => ['type' => 'string'],
+                                'icon'       => ['type' => 'string'],
+                                'categories' => ['type' => 'array'],
+                            ],
+                        ],
                     ],
                 ],
             ],
             'execute_callback' => function () {
-                return Elementor_Data::list_widgets();
+                return ['items' => Elementor_Data::list_widgets()];
             },
             'permission_callback' => [self::class, 'can_read'],
             'meta' => self::meta_read(),

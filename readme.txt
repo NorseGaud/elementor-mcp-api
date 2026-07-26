@@ -64,6 +64,10 @@ Page read/write requires `edit_pages` (plus per-page `edit_post`). Media import 
 
 Call the MCP tool `mcp-api-for-elementor-get-instructions` first. It returns the latest workflow, tool catalog, layout patterns, and gotchas for the installed plugin version. No local skill file is required.
 
+= Why do list MCP tools return an object instead of a bare array? =
+
+List tools (`list-pages`, `list-templates`, `list-widgets`) return `{ "items": [ ... ] }` so every tool `outputSchema` is a JSON object. Some MCP clients (including Cursor) reject catalogs that declare top-level array output schemas.
+
 == Changelog ==
 
 
