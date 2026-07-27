@@ -160,7 +160,7 @@ Replace:
 - `WP_API_PASSWORD` — Application Password (spaces are fine)
 - `OAUTH_ENABLED` — set to `"false"` when using Application Passwords (required by `@automattic/mcp-wordpress-remote`)
 
-If Cursor shows a green status but **“No tools, prompts, or resources”**, the proxy likely cached a failed init (common right after installing MCP Adapter). Toggle the server off/on or reload MCP servers so it reconnects against the live `/mcp` route.
+If Cursor shows a green status but **“No tools, prompts, or resources”**, the proxy likely cached a failed init (common right after installing MCP Adapter). Toggle the server off/on or reload MCP servers so it reconnects against the live `/mcp` route. Also, sometimes it's due to the mcp.json definition title being too long or having characters like periods.
 
 ---
 
